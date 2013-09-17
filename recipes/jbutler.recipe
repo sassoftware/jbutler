@@ -1,0 +1,15 @@
+class JButlerRecipe(PackageRecipe):
+    name = 'jbutler'
+    version = '0'
+
+    buildRequires = [
+        'python-setuptools',
+        'python-lxml',
+        'python-jenkinsapi:python',
+        'python-requests:python',
+        ]
+
+    def setup(r):
+        r.addMercurialSnapshot('http://scc.unx.sas.com/infra/'
+                               '%(name)s/trunk/%(name)s')
+        r.PythonSetup()
