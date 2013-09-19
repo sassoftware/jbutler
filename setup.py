@@ -19,6 +19,10 @@ setup(
     author_email='walter.scheper@sas.com',
     license='Apache License 2.0',
     install_requires=requires,
-    packages=find_packages(),
+    packages=[
+        'jbutler',
+        'jbutler.commands',
+        'jbutler.lib',
+        ],
     scripts=['commands/jbutler']
     )
