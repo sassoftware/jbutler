@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) SAS Institute Inc.
 #
@@ -15,28 +14,13 @@
 # limitations under the License.
 #
 
-
-import sys
-
-from testrunner import suite, testhandler
-
-
-class Suite(suite.TestSuite):
-    testsuite_module = sys.modules[__name__]
-    suiteClass = testhandler.ConaryTestSuite
-    topLevelStrip = 0
-
-    def getCoverageDirs(self, *_):
-        import jbutler
-        return [jbutler]
-
-    def sortTests(self, tests):
-        return self.sortTestsByType(tests)
+from . import configcommand
+from . import helpcommand
+from . import jobcommand
 
 
-_s = Suite()
-setup = _s.setup
-main = _s.main
-
-if __name__ == '__main__':
-    _s.run()
+commandList = [
+    configcommand.ConfigCommand,
+    helpcommand.HelpCommand,
+    jobcommand.JobCommand,
+    ]

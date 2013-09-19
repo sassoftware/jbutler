@@ -16,27 +16,11 @@
 #
 
 
-import sys
-
-from testrunner import suite, testhandler
+from jbutler_test import jbutlerhelp
 
 
-class Suite(suite.TestSuite):
-    testsuite_module = sys.modules[__name__]
-    suiteClass = testhandler.ConaryTestSuite
-    topLevelStrip = 0
+class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
-    def getCoverageDirs(self, *_):
-        import jbutler
-        return [jbutler]
-
-    def sortTests(self, tests):
-        return self.sortTestsByType(tests)
-
-
-_s = Suite()
-setup = _s.setup
-main = _s.main
-
-if __name__ == '__main__':
-    _s.run()
+    def test_no_jobs_dir(self):
+        out = self.runCommand('jobs create', exitCode=1)
+        self.assertEqual(out, 'error: no jobs directory found in %s\n' % self.workDir)

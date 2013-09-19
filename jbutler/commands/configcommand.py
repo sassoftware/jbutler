@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) SAS Institute Inc.
 #
@@ -16,27 +15,21 @@
 #
 
 
-import sys
-
-from testrunner import suite, testhandler
+from ..lib import command
 
 
-class Suite(suite.TestSuite):
-    testsuite_module = sys.modules[__name__]
-    suiteClass = testhandler.ConaryTestSuite
-    topLevelStrip = 0
+class ConfigCommand(command.BaseCommand):
+    commands = ['config']
+    help = 'Display the current configuration'
 
-    def getCoverageDirs(self, *_):
-        import jbutler
-        return [jbutler]
-
-    def sortTests(self, tests):
-        return self.sortTestsByType(tests)
-
-
-_s = Suite()
-setup = _s.setup
-main = _s.main
-
-if __name__ == '__main__':
-    _s.run()
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        cfg.setDisplayOptions(hidePasswords=True,
+                              showContexts=False,
+                              prettyPrint=True,
+                              showLineOrigins=False)
+        if argSet:
+            return self.usage()
+        if (len(args) > 2):
+            return self.usage()
+        else:
+            cfg.display()
