@@ -1,11 +1,6 @@
 # Copyright (c) 2013 SAS Institute, Inc
 #
-from setuptools import setup
-
-
-requires = [
-    'jenkinsapi',
-    ]
+from distutils.core import setup
 
 
 VERSION = (0, 0, 1)
@@ -17,7 +12,6 @@ setup(
     author='Walter Scheper',
     author_email='walter.scheper@sas.com',
     license='Apache License 2.0',
-    install_requires=requires,
     packages=[
         'jbutler',
         'jbutler.commands',
