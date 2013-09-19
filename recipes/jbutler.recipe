@@ -4,7 +4,6 @@ class JButlerRecipe(PackageRecipe):
 
     buildRequires = [
         'python-setuptools:python',
-        'python-lxml',
         'python-jenkinsapi:python',
         'python-requests:python',
         ]
