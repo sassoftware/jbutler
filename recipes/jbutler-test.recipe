@@ -21,74 +21,14 @@ class JbutlerTest(TestPackageRecipe):
     version = '0'
 
     Flags.coverage = False
-
     Flags.test = True
 
+    testsuite = "testsuite.py"
+
     buildRequires = [
-        'jbutler',
+        'jbutler:python',
         ]
 
     def setupSource(r):
-        r.addMercurialSnapshot(
-            'http://scc.unx.sas.com//hg/infra/jbutler/trunk/jbutler')
-
-    def run_tests(r, do_coverage=True, configuration=None,
-            testsuite='testsuite.py', prefix=None, environ='',
-            args=''):
-        r.macros.bindir = '%(pyroot)s/bin'
-        r.macros.datadir = '%(pyroot)s/share'
-        r.macros.includedir = '%(pyroot)s/include'
-        r.macros.pybin = '%(pyroot)s/bin/python%(pyver)s'
-        r.macros.pydir = '%(pylib)s/python%(pyver)s/site-packages'
-        r.macros.pyinc = '%(pyroot)s/include/python%(pyver)s'
-        r.macros.pylib = '%(pyroot)s/%(lib)s'
-        r.macros.pyroot = '/usr'
-        r.macros.sbindir = '%(pyroot)s/sbin'
-
-
-        if configuration is None:
-            configuration = {}
-        if 'arch' not in configuration:
-            configuration['arch'] = Arch.getCurrentArch()._name
-
-        r.macros.testinfodir = '/usr/share/testinfo/%(name)s-%(version)s'
-        r.macros.testoutputdir = '%(testinfodir)s/tests'
-        r.macros.coverdir = '%(testinfodir)s/coverage'
-        r.MakeDirs(r.macros.testoutputdir, r.macros.coverdir)
-
-        r.macros.pythonpath = ':'.join(r.pythonPath)
-        r.macros.testsuitedir = r.testDir
-
-        r.macros.testsuite = testsuite
-        # TODO figure out how to run py.test coverage
-        #r.macros.coverage = do_coverage and '--coverage' or ''
-        r.macros.coverage = ''
-        r.macros.xml_prefix = prefix and '--junitprefix "%s"' % prefix or ''
-        r.macros.extra_environ = environ
-        r.macros.args = args
-        r.macros.args += r.macros.get('test_subset', '')
-
-        # tests
-        # NOTE: rephelp likes CONARY_PATH to end in a slash
-        r.Run('PYTHONPATH="%(pythonpath)s" CONARY_PATH="%(pydir)s/" '
-            'COVERAGE_PATH="%(pydir)s" %(extra_environ)s '
-            'RPATH_USE_SYSTEM_MODULES=1 '
-            '%(pybin)s %(testsuite)s -v '
-            '--junitxml="%(destdir)s%(testoutputdir)s/junit.xml" '
-            '%(coverage)s %(xml_prefix)s %(args)s',
-            dir=r.testDir)
-
-        # coverage
-        if do_coverage:
-            r.macros.coversearch = ' '.join(['"%s=%s"' % (tree, path)
-                for (tree, path) in r.codeDirs.iteritems()])
-            r.Run('coverage_dump -o %(destdir)s%(coverdir)s/coverage.dat '
-                '-t %(testsuite)s %(testsuitedir)s %(coversearch)s')
-
-        # configuration
-        r.Create('%(testinfodir)s/configuration.txt',
-            contents='%r\n' % configuration)
-
-        # policy
-        r.ComponentSpec('testinfo', '%(testinfodir)s/.*')
-        r.ByDefault(exceptions=[':testinfo'])
+        r.addMercurialSnapshot()
+        r.Remove('jbutler', recursive=True)
