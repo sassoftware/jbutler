@@ -1,10 +1,9 @@
 # Copyright (c) 2013 SAS Institute, Inc
 #
-from setuptools import find_packages, setup
+from setuptools import setup
 
 
 requires = [
-    'setuptools',
     'jenkinsapi',
     ]
 
