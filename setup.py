@@ -20,9 +20,5 @@ setup(
     license='Apache License 2.0',
     install_requires=requires,
     packages=find_packages(),
-    entry_points={
-        'console_scripts': [
-            'jbutler = jbutler.lib.mainhandler:main',
-            ],
-        },
+    scripts=['commands/jbutler']
     )
