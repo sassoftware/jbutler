@@ -58,6 +58,6 @@ class JobCreateCommand(command.BaseCommand):
                 )
 
         results = jobs.createJobs(cfg, args, jobsDir)
-        if not results:
-            raise errors.CommandError('Job creation failed')
+        print('Created: %s' % results)
+
 JobCommand.registerSubCommand('create', JobCreateCommand)

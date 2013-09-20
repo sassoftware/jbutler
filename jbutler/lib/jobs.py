@@ -25,7 +25,7 @@ from jenkinsapi.jenkins import Jenkins
 from jbutler import errors
 
 
-def createJobs(cfg, jobList, projectPath):
+def createJobs(cfg, jobList, jobDir):
     """
     Create jenkins jobs using the files listed in jobList
 
@@ -35,15 +35,17 @@ def createJobs(cfg, jobList, projectPath):
     @type cfg: list
     @param projectPath: path to directory containing jenkins job config files
     """
-    jenkins = Jenkins(cfg.server, username=cfg.username, password=cfg.password,
-                      requester=cfg.requester)
 
     jobs = []
-    jobDir = os.path.join(projectPath, 'jobs')
     if not os.path.exists(jobDir):
         raise errors.CommandError("no such directory: '%s'" % jobDir)
 
-    for jobFile in os.listdir(jobDir):
+    jobFiles = os.listdir(jobDir)
+    if not jobFiles:
+        return jobs
+
+    jenkins = Jenkins(cfg.server, username=cfg.username, password=cfg.password)
+    for jobFile in jobFiles:
         jobName, _ = os.path.splitext(jobFile)
 
         # only create jobs that the user supplied

@@ -37,6 +37,10 @@ testsuite.setup()
 class TestCase(testcase.TestCaseWithWorkDir):
     testDirName = 'jbutler-test-'
 
+    def setUp(self):
+        testcase.TestCaseWithWorkDir.setUp(self)
+        self.rootDir = self.workDir
+
     def mkdirs(self, path):
         if not path.startswith(os.sep):
             # Relative paths are relative to self.rootDir

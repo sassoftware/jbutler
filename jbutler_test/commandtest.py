@@ -16,11 +16,25 @@
 #
 
 
+import os
+
+from jbutler.lib import jobs
+
 from jbutler_test import jbutlerhelp
 
 
 class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
+    """
+    Test the jbutler jobs command and sub-commands
+    """
 
     def test_no_jobs_dir(self):
         out = self.runCommand('jobs create', exitCode=1)
-        self.assertEqual(out, 'error: no jobs directory found in %s\n' % self.workDir)
+        self.assertEqual(out, 'error: no jobs directory found in %s\n' %
+                         self.workDir)
+
+    def test_empty_jobs_dir(self):
+        self.mkdirs('jobs')
+
+        out = self.runCommand('jobs create', exitCode=0)
+        self.assertEqual(out, 'Created: []\n')
