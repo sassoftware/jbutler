@@ -16,7 +16,7 @@
 
 from . import configcommand
 from . import helpcommand
-from . import jobcommand
+from . import jobscommand
 
 
 commandList = [
