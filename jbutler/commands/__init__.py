@@ -22,5 +22,5 @@ from . import jobscommand
 commandList = [
     configcommand.ConfigCommand,
     helpcommand.HelpCommand,
-    jobcommand.JobCommand,
+    jobscommand.JobCommand,
     ]
