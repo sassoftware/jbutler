@@ -36,7 +36,7 @@ class JobCommand(command.CommandWithSubCommands):
 class JobCreateCommand(command.BaseCommand):
     help = 'Create a jenkins job'
     command = ['create']
-    paramHelp = '[jobs]...'
+    paramHelp = '[job]...'
     requireConfig = True
 
     def addParameters(self, argDef):
@@ -45,7 +45,9 @@ class JobCreateCommand(command.BaseCommand):
                              ' current working directory')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        args = self.requireParameters(args, appendExtra=True)
+        _, jobsList = self.requireParameters(args, allowExtra=True)
+        if not jobsList:
+            jobsList = None
 
         projectDir = argSet.pop('project', os.getcwd())
         projectDir = os.path.abspath(projectDir)
@@ -57,7 +59,39 @@ class JobCreateCommand(command.BaseCommand):
                 'no jobs directory found in %s' % (projectDir)
                 )
 
-        results = jobs.createJobs(cfg, args, jobsDir)
-        print('Created: %s' % results)
+        results = jobs.createJobs(cfg, jobsList, jobsDir)
+        print('Created: [%s]' % ', '.join([job.name for job in results]))
 
 JobCommand.registerSubCommand('create', JobCreateCommand)
+
+
+class JobRetrieveCommand(command.BaseCommand):
+    help = 'Retrieve a jenkins job'
+    command = ['retrieve']
+    paramHelp = '[job name]*'
+    requireConfig = True
+
+    def addParameters(self, argDef):
+        super(JobRetrieveCommand, self).addParameters(argDef)
+        argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
+                             ' current working directory')
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        _, jobsList = self.requireParameters(args, allowExtra=True)
+        if not jobsList:
+            jobsList = None
+
+        projectDir = argSet.pop('project', os.getcwd())
+        projectDir = os.path.abspath(projectDir)
+        jobsDir = os.path.join(projectDir, 'jobs')
+
+        # verify jobsDir exist
+        if not (os.path.exists(jobsDir) and os.path.isdir(jobsDir)):
+            raise errors.CommandError(
+                'no jobs directory found in %s' % (projectDir)
+                )
+
+        results = jobs.retrieveJobs(cfg, jobsList, jobsDir)
+        print('Retrieved: [%s]' % ', '.join([job.name for job in results]))
+
+JobCommand.registerSubCommand('retrieve', JobRetrieveCommand)

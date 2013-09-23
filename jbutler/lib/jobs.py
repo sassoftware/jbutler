@@ -35,31 +35,37 @@ def createJobs(cfg, jobList, jobDir):
     @type cfg: list
     @param projectPath: path to directory containing jenkins job config files
     """
-
     jobs = []
     if not os.path.exists(jobDir):
         raise errors.CommandError("no such directory: '%s'" % jobDir)
 
-    jobFiles = os.listdir(jobDir)
+    jobFiles = [os.path.join(jobDir, f) for f in os.listdir(jobDir)]
     if not jobFiles:
         return jobs
 
     jenkins = Jenkins(cfg.server, username=cfg.username, password=cfg.password)
     for jobFile in jobFiles:
         jobName, _ = os.path.splitext(jobFile)
+        jobName = os.path.basename(jobName)
 
         # only create jobs that the user supplied
         if jobList and jobName not in jobList:
             continue
+        elif jobList:
+            jobList.remove(os.path.splitext(jobName)[0])
 
         with open(jobFile) as fh:
             print("Creating job '%s'" % jobName)
             j = jenkins.create_job(jobname=jobName, config=fh.read())
             jobs.append(j)
+
+    if jobList:
+        print("WARNING: These jobs were not found in the jobs directory: %s" %
+              ', '.join([j + '.xml' for j in jobList]))
     return jobs
 
 
-def retrieveJobs(cfg, jobList, projectPath):
+def retrieveJobs(cfg, jobList, jobDir):
     """
     Retrieve jenkins config
 
@@ -69,24 +75,33 @@ def retrieveJobs(cfg, jobList, projectPath):
     @type cfg: list
     @param projectPath: path to directory containing jenkins job config files
     """
-    jenkins = Jenkins(cfg.server, username=cfg.username, password=cfg.password,
-                      requester=cfg.requester)
-
-    jobs = []
-    jobDir = os.path.join(projectPath, 'jobs')
     if not os.path.exists(jobDir):
         raise errors.CommandError("no such directory: '%s'" % jobDir)
 
-    for jobFile in os.listdir(jobDir):
-        jobName, _ = os.path.splitext(jobFile)
+    jobs = []
+    jenkins = Jenkins(cfg.server, username=cfg.username, password=cfg.password)
 
-        # only create jobs that the user supplied
-        if jobList and jobName not in jobList:
-            continue
-
+    job_generator = _get_job_generator(jenkins, jobList)
+    for jobName, jobObj in job_generator:
+        jobFile = os.path.join(jobDir, jobName + '.xml')
         with open(jobFile, 'w') as fh:
-            print("Retrieving job '%s'" % jobName)
-            job = jenkins.get_job(jobName)
-            fh.write(job.get_config())
-            jobs.append(job)
+            fh.write(jobObj.get_config())
+        jobs.append(jobObj)
     return jobs
+
+
+def _get_job_generator(server, jobList=None):
+    """
+    Create a generator to fetch jobs from a jenkins server
+    """
+    def _job_generator():
+        for jobName in jobList:
+            if not server.has_job(jobName):
+                print("WARNING: Server does not have job '%s'" % jobName)
+                continue
+            yield jobName, server.get_job(jobName)
+
+    if not jobList:
+        return server.get_jobs()
+    else:
+        return _job_generator()

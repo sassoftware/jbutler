@@ -48,6 +48,15 @@ class TestCase(testcase.TestCaseWithWorkDir):
         util.mkdirChain(path)
         return path
 
+    def mkfile(self, path, contents=None):
+        if not path.startswith(os.sep):
+            # Relative paths are relative to self.rootDir
+            path = os.path.join(self.rootDir, path)
+        if contents:
+            with open(path, 'w') as fh:
+                fh.write(contents or '')
+        return path
+
 
 class JButlerHelper(TestCase):
     """

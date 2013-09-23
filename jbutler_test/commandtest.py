@@ -18,9 +18,15 @@
 
 import os
 
-from jbutler.lib import jobs
+from jenkinsapi import jenkins
+import mock
 
 from jbutler_test import jbutlerhelp
+
+
+FOO_JOB = """\
+Just a file
+"""
 
 
 class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
@@ -38,3 +44,123 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         out = self.runCommand('jobs create', exitCode=0)
         self.assertEqual(out, 'Created: []\n')
+
+    @mock.patch('jbutler.lib.jobs.Jenkins')
+    def test_successfull_job_creation(self, _Jenkins):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob.name = 'foo'
+
+        # mock an instance of Jenkins object that return mockJob
+        mockJenkins = mock.MagicMock(spec=jenkins.Jenkins)
+        mockJenkins.create_job.return_value = mockJob
+        _Jenkins.return_value = mockJenkins
+
+        out = self.runCommand('jobs create', exitCode=0)
+        self.assertEqual("Creating job 'foo'\nCreated: [foo]\n", out)
+
+    @mock.patch('jbutler.lib.jobs.Jenkins')
+    def test_successfull_job_creation_with_list(self, _Jenkins):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob.name = 'foo'
+
+        # mock an instance of Jenkins object that return mockJob
+        mockJenkins = mock.MagicMock(spec=jenkins.Jenkins)
+        mockJenkins.create_job.return_value = mockJob
+        _Jenkins.return_value = mockJenkins
+
+        out = self.runCommand('jobs create foo', exitCode=0)
+        self.assertEqual("Creating job 'foo'\nCreated: [foo]\n", out)
+
+    @mock.patch('jbutler.lib.jobs.Jenkins')
+    def test_successfull_job_creation_with_list_missing_item(self, _Jenkins):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob.name = 'foo'
+
+        # mock an instance of Jenkins object that return mockJob
+        mockJenkins = mock.MagicMock(spec=jenkins.Jenkins)
+        mockJenkins.create_job.return_value = mockJob
+        _Jenkins.return_value = mockJenkins
+
+        out = self.runCommand('jobs create foo bar', exitCode=0)
+        self.assertEqual(
+            "Creating job 'foo'\n"
+            "WARNING: These jobs were not found in the jobs directory: bar.xml\n"
+            "Created: [foo]\n",
+            out)
+
+    @mock.patch('jbutler.lib.jobs.Jenkins')
+    def test_successfull_job_retrieval(self, _Jenkins):
+        self.mkdirs('jobs')
+
+        # create a mocked job object
+        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob.name = 'foo'
+        mockJob.get_config.return_value = FOO_JOB
+
+        # mock out Jenkins object
+        _Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
+        _Jenkins.return_value.get_jobs.return_value = iter([('foo', mockJob)])
+
+        out = self.runCommand('jobs retrieve', exitCode=0)
+        self.assertEqual("Retrieved: [foo]\n", out)
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
+
+    @mock.patch('jbutler.lib.jobs.Jenkins')
+    def test_successfull_job_retrieval_with_list(self, _Jenkins):
+        self.mkdirs('jobs')
+
+        # create a mocked job object
+        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob.name = 'foo'
+        mockJob.get_config.return_value = FOO_JOB
+
+        # mock out Jenkins object
+        _Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
+        _Jenkins.return_value.has_job.return_value = True
+        _Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs retrieve foo', exitCode=0)
+
+        self.assertEqual("Retrieved: [foo]\n", out)
+        _Jenkins.return_value.has_job.assert_called_once_with('foo')
+        _Jenkins.return_value.get_job.assert_called_once_with('foo')
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
+
+    @mock.patch('jbutler.lib.jobs.Jenkins')
+    def test_successfull_job_retrieval_with_missing_item(self, _Jenkins):
+        self.mkdirs('jobs')
+
+        # create a mocked job object
+        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob.name = 'foo'
+        mockJob.get_config.return_value = FOO_JOB
+
+        # mock out Jenkins object
+        _Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
+        _Jenkins.return_value.has_job.side_effect = (True, False)
+        _Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs retrieve foo bar', exitCode=0)
+
+        self.assertEqual(
+            "WARNING: Server does not have job 'bar'\n"
+            "Retrieved: [foo]\n",
+            out)
+        _Jenkins.return_value.has_job.call_list = ['foo', 'bar']
+        _Jenkins.return_value.get_job.assert_called_once_with('foo')
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
