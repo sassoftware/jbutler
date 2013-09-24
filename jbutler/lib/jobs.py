@@ -44,6 +44,7 @@ def createJobs(cfg, jobList, jobDir):
     # generate a list of job files in jobDir
     jobFiles = [os.path.join(jobDir, f) for f in os.listdir(jobDir)
                 if f.endswith('.xml')]
+
     if not jobFiles:
         print('No jobs found')
         return jobs
