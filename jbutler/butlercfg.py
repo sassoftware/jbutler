@@ -35,15 +35,13 @@ class CfgPassword(cfgtypes.CfgType):
     """
     def parseString(self, val):
         assert val, "expected password"
-        return base64.b64encode(val)
+        return base64.b64decode(val)
 
     def format(self, val, displayOptions=None):
-        if val is None:
-            val = ''
-        elif displayOptions.get('hidePasswords'):
+        if displayOptions.get('hidePasswords'):
             return '<password>'
         else:
-            return base64.b64decode(val)
+            return val or ''
 
 
 class ButlerConfiguration(cfg.ConfigFile):
