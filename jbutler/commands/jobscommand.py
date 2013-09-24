@@ -72,6 +72,7 @@ class JobRetrieveCommand(command.BaseCommand):
     requireConfig = True
 
     def addLocalParameters(self, argDef):
+        super(JobRetrieveCommand, self).addLocalParameters(argDef)
         argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
                              ' current working directory')
         argDef['filter'] = (options.MULT_PARAM, 'Filter to apply to jobs')
