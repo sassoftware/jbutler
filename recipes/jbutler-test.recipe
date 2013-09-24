@@ -26,6 +26,7 @@ class JbutlerTest(TestPackageRecipe):
     testsuite = "testsuite.py"
 
     buildRequires = [
+        'python-mock',
         'jbutler:python',
         ]
 
