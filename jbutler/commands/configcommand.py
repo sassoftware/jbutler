@@ -15,18 +15,29 @@
 #
 
 
+import sys
+
 from ..lib import command
 
 
 class ConfigCommand(command.BaseCommand):
     commands = ['config']
     help = 'Display the current configuration'
+    docs = {'show-passwords': 'Do not mask passwords'}
+
+    def addParameters(self, argDef):
+        super(ConfigCommand, self).addParameters(argDef)
+        argDef['show-passwords'] = command.NO_PARAM
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        cfg.setDisplayOptions(hidePasswords=True,
-                              showContexts=False,
-                              prettyPrint=True,
-                              showLineOrigins=False)
+        showPasswords = argSet.pop('show-passwords', False)
+
+        try:
+            prettyPrint = sys.stdout.isatty()
+        except AttributeError:
+            prettyPrint = False
+        cfg.setDisplayOptions(hidePasswords=not showPasswords,
+                              prettyPrint=prettyPrint)
         if argSet:
             return self.usage()
         if (len(args) > 2):
