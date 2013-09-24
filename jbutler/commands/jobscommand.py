@@ -18,6 +18,7 @@
 job command
 """
 import os
+import re
 
 from conary.lib import options
 
@@ -59,8 +60,7 @@ class JobCreateCommand(command.BaseCommand):
                 'no jobs directory found in %s' % (projectDir)
                 )
 
-        results = jobs.createJobs(cfg, jobsList, jobsDir)
-        print('Created: [%s]' % ', '.join([job.name for job in results]))
+        jobs.createJobs(cfg, jobsList, jobsDir)
 
 JobCommand.registerSubCommand('create', JobCreateCommand)
 
@@ -71,10 +71,10 @@ class JobRetrieveCommand(command.BaseCommand):
     paramHelp = '[job name]*'
     requireConfig = True
 
-    def addParameters(self, argDef):
-        super(JobRetrieveCommand, self).addParameters(argDef)
+    def addLocalParameters(self, argDef):
         argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
                              ' current working directory')
+        argDef['filter'] = (options.MULT_PARAM, 'Filter to apply to jobs')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
         _, jobsList = self.requireParameters(args, allowExtra=True)
@@ -82,6 +82,10 @@ class JobRetrieveCommand(command.BaseCommand):
             jobsList = None
 
         projectDir = argSet.pop('project', os.getcwd())
+        jobFilters = argSet.pop('filter', None)
+        if jobFilters:
+            jobFilters = [re.compile(f) for f in jobFilters]
+
         projectDir = os.path.abspath(projectDir)
         jobsDir = os.path.join(projectDir, 'jobs')
 
@@ -91,7 +95,6 @@ class JobRetrieveCommand(command.BaseCommand):
                 'no jobs directory found in %s' % (projectDir)
                 )
 
-        results = jobs.retrieveJobs(cfg, jobsList, jobsDir)
-        print('Retrieved: [%s]' % ', '.join([job.name for job in results]))
+        jobs.retrieveJobs(cfg, jobsList, jobsDir, jobFilters)
 
 JobCommand.registerSubCommand('retrieve', JobRetrieveCommand)
