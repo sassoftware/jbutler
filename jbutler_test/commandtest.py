@@ -45,7 +45,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand('jobs create', exitCode=0)
         self.assertEqual(out, 'No jobs found\n')
 
-    @mock.patch('jbutler.lib.jobs.Jenkins')
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successfull_job_creation(self, _Jenkins):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
@@ -62,7 +62,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand('jobs create', exitCode=0)
         self.assertEqual("", out)
 
-    @mock.patch('jbutler.lib.jobs.Jenkins')
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successfull_job_creation_with_list(self, _Jenkins):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
@@ -79,7 +79,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand('jobs create foo', exitCode=0)
         self.assertEqual("", out)
 
-    @mock.patch('jbutler.lib.jobs.Jenkins')
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successfull_job_creation_with_list_missing_item(self, _Jenkins):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
@@ -98,7 +98,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
             "These jobs were not found in the jobs directory: bar.xml\n",
             out)
 
-    @mock.patch('jbutler.lib.jobs.Jenkins')
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successfull_job_retrieval(self, _Jenkins):
         self.mkdirs('jobs')
 
@@ -116,7 +116,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
 
-    @mock.patch('jbutler.lib.jobs.Jenkins')
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successfull_job_retrieval_with_list(self, _Jenkins):
         self.mkdirs('jobs')
 
@@ -138,7 +138,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
 
-    @mock.patch('jbutler.lib.jobs.Jenkins')
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successfull_job_retrieval_with_missing_item(self, _Jenkins):
         self.mkdirs('jobs')
 
@@ -162,7 +162,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
 
-    @mock.patch('jbutler.lib.jobs.Jenkins')
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_retrieval_filter(self, _Jenkins):
         self.mkdirs('jobs')
 
@@ -186,32 +186,3 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual("", out)
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
-
-    @mock.patch('jbutler.lib.jobs.Jenkins')
-    def test_retrieval_filters(self, _Jenkins):
-        self.mkdirs('jobs')
-
-        # create a mocked job object
-        mockJobFoo = mock.MagicMock(spec=jenkins.Job)
-        mockJobFoo.name = 'foo'
-        mockJobFoo.get_config.return_value = FOO_JOB
-
-        mockJobBar = mock.MagicMock(spec=jenkins.Job)
-        mockJobBar.name = 'bar'
-        mockJobBar.get_config.return_value = "A bar job\n"
-
-        # mock out Jenkins object
-        _Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
-        _Jenkins.return_value.get_jobs.return_value = iter([
-            ('foo', mockJobFoo),
-            ('bar', mockJobBar),
-            ])
-
-        out = self.runCommand('jobs retrieve --filter=f.* --filter=b.*',
-                              exitCode=0)
-        self.assertEqual("", out)
-        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
-        self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
-        self.assertTrue(os.path.exists(self.workDir + '/jobs/bar.xml'))
-        self.assertEqual(open(self.workDir + '/jobs/bar.xml').read(),
-                         "A bar job\n")

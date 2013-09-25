@@ -75,7 +75,7 @@ class JobRetrieveCommand(command.BaseCommand):
         super(JobRetrieveCommand, self).addLocalParameters(argDef)
         argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
                              ' current working directory')
-        argDef['filter'] = (options.MULT_PARAM, 'Filter to apply to jobs')
+        argDef['filter'] = (options.OPT_PARAM, 'Filter to apply to jobs')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
         _, jobsList = self.requireParameters(args, allowExtra=True)
@@ -83,9 +83,7 @@ class JobRetrieveCommand(command.BaseCommand):
             jobsList = None
 
         projectDir = argSet.pop('project', os.getcwd())
-        jobFilters = argSet.pop('filter', None)
-        if jobFilters:
-            jobFilters = [re.compile(f) for f in jobFilters]
+        jobFilter = argSet.pop('filter', None)
 
         projectDir = os.path.abspath(projectDir)
         jobsDir = os.path.join(projectDir, 'jobs')
@@ -96,6 +94,6 @@ class JobRetrieveCommand(command.BaseCommand):
                 'no jobs directory found in %s' % (projectDir)
                 )
 
-        jobs.retrieveJobs(cfg, jobsList, jobsDir, jobFilters)
+        jobs.retrieveJobs(cfg, jobsList, jobsDir, jobFilter)
 
 JobCommand.registerSubCommand('retrieve', JobRetrieveCommand)
