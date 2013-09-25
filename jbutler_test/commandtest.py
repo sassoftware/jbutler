@@ -28,6 +28,11 @@ FOO_JOB = """\
 Just a file
 """
 
+JBUTLER_RC = """\
+password                  c2VjcmV0
+server                    http://jenkins.example.com
+username                  test
+"""
 
 class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
     """
@@ -44,6 +49,17 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         out = self.runCommand('jobs create', exitCode=0)
         self.assertEqual(out, 'No jobs found\n')
+
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
+    def test_successful_config_show(self, _Jenkins):
+        self.mkfile('jbutlerrc', contents=JBUTLER_RC)
+
+        out = self.runCommand('config', exitCode=0)
+        expectedOut = 'password                  <password>\n' \
+                      'server                    http://jenkins.example.com\n' \
+                      'username                  test\n'
+
+        self.assertEqual(out, expectedOut)
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successfull_job_creation(self, _Jenkins):
