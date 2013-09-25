@@ -51,6 +51,7 @@ class ButlerConfiguration(cfg.ConfigFile):
     server = cfgtypes.CfgString
     username = cfgtypes.CfgString
     password = CfgPassword
+    ssl_verify = (cfgtypes.CfgBool, True)
 
     def __init__(self, readConfigFiles=False, ignoreErrors=False, root=''):
         cfg.ConfigFile.__init__(self)
