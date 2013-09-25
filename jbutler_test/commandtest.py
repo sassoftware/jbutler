@@ -31,6 +31,7 @@ Just a file
 JBUTLER_RC = """\
 password                  c2VjcmV0
 server                    http://jenkins.example.com
+ssl_verify                True
 username                  test
 """
 
@@ -50,8 +51,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand('jobs create', exitCode=0)
         self.assertEqual(out, 'No jobs found\n')
 
-    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
-    def test_successful_config_show(self, _Jenkins):
+    def test_successful_config_show(self):
         self.mkfile('jbutlerrc', contents=JBUTLER_RC)
 
         out = self.runCommand('config', exitCode=0)
@@ -62,15 +62,38 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         self.assertEqual(out, expectedOut)
 
+    def test_successful_config_show_exposed_password(self):
+        self.mkfile('jbutlerrc', contents=JBUTLER_RC)
+
+        out = self.runCommand('config --show-passwords', exitCode=0)
+        expectedOut = 'password                  secret\n' \
+                      'server                    http://jenkins.example.com\n' \
+                      'ssl_verify                True\n' \
+                      'username                  test\n'
+
+        self.assertEqual(out, expectedOut)
+
+    def test_successful_config_show_alt_config_file(self):
+        self.mkfile('jbutlerrc_alt', contents=JBUTLER_RC)
+
+        cmd = "config --config-file=%s/jbutlerrc_alt" % self.workDir
+        out = self.runCommand(cmd, exitCode=0)
+        expectedOut = 'password                  <password>\n' \
+                      'server                    http://jenkins.example.com\n' \
+                      'ssl_verify                True\n' \
+                      'username                  test\n'
+
+        self.assertEqual(out, expectedOut)
+        
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
-    def test_successfull_job_creation(self, _Jenkins):
+    def test_successful_job_creation(self, _Jenkins):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
 
         # create a job object
         mockJob = mock.MagicMock(spec=jenkins.Job)
         mockJob.name = 'foo'
-
+        
         # mock an instance of Jenkins object that return mockJob
         mockJenkins = mock.MagicMock(spec=jenkins.Jenkins)
         mockJenkins.create_job.return_value = mockJob
@@ -80,7 +103,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual("", out)
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
-    def test_successfull_job_creation_with_list(self, _Jenkins):
+    def test_successful_job_creation_with_list(self, _Jenkins):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
 
@@ -97,7 +120,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual("", out)
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
-    def test_successfull_job_creation_with_list_missing_item(self, _Jenkins):
+    def test_successful_job_creation_with_list_missing_item(self, _Jenkins):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
 
@@ -116,7 +139,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
             out)
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
-    def test_successfull_job_retrieval(self, _Jenkins):
+    def test_successful_job_retrieval(self, _Jenkins):
         self.mkdirs('jobs')
 
         # create a mocked job object
@@ -134,7 +157,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
-    def test_successfull_job_retrieval_with_list(self, _Jenkins):
+    def test_successful_job_retrieval_with_list(self, _Jenkins):
         self.mkdirs('jobs')
 
         # create a mocked job object
@@ -156,7 +179,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
-    def test_successfull_job_retrieval_with_missing_item(self, _Jenkins):
+    def test_successful_job_retrieval_with_missing_item(self, _Jenkins):
         self.mkdirs('jobs')
 
         # create a mocked job object
@@ -203,3 +226,4 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual("", out)
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
+

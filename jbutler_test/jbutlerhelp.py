@@ -113,4 +113,5 @@ class JButlerCommandTest(JButlerHelper):
         finally:
             if curDir:
                 os.chdir(curDir)
-            sys.stdin = stdin
+            if len(stdin):
+                sys.stdin = stdin
