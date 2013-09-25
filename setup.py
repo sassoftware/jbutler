@@ -16,6 +16,7 @@ setup(
         'jbutler',
         'jbutler.commands',
         'jbutler.lib',
+        'jbutler.utils',
         ],
     scripts=['commands/jbutler']
     )
