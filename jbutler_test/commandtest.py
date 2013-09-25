@@ -57,6 +57,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand('config', exitCode=0)
         expectedOut = 'password                  <password>\n' \
                       'server                    http://jenkins.example.com\n' \
+                      'ssl_verify                True\n' \
                       'username                  test\n'
 
         self.assertEqual(out, expectedOut)
