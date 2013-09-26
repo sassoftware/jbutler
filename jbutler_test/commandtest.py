@@ -25,7 +25,15 @@ from jbutler_test import jbutlerhelp
 
 
 FOO_JOB = """\
-Just a file
+Contents of Foo job.
+"""
+
+BAR_JOB = """\
+Contents of Bar Job.
+"""
+
+BAZ_JOB = """\
+Contents of Baz Job.
 """
 
 JBUTLER_RC = """\
@@ -155,6 +163,63 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual("", out)
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
+
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
+    def test_successful_job_retrieval_with_filter(self, _Jenkins):
+        self.mkdirs('jobs')
+
+        # create a mocked job object for foo
+        mockFooJob = mock.MagicMock(spec=jenkins.Job)
+        mockFooJob.name = 'foo'
+        mockFooJob.get_config.return_value = FOO_JOB
+
+        # create a mocked job object for bar
+        mockBarJob = mock.MagicMock(spec=jenkins.Job)
+        mockBarJob.name = 'bar'
+        mockBarJob.get_config.return_value = BAR_JOB
+
+        # mock out Jenkins object
+        _Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
+        _Jenkins.return_value.get_jobs.return_value = \
+            iter([('foo', mockFooJob), ('bar', mockBarJob)])
+
+        out = self.runCommand('jobs retrieve --filter=foo', exitCode=0)
+        self.assertEqual("", out)
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
+        self.assertFalse(os.path.exists(self.workDir + '/jobs/bar.xml'))
+
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
+    def test_successful_job_retrieval_with_glob_filter(self, _Jenkins):
+        self.mkdirs('jobs')
+
+        # create a mocked job object for foo
+        mockFooJob = mock.MagicMock(spec=jenkins.Job)
+        mockFooJob.name = 'foo'
+        mockFooJob.get_config.return_value = FOO_JOB
+
+        # create a mocked job object for bar
+        mockBarJob = mock.MagicMock(spec=jenkins.Job)
+        mockBarJob.name = 'bar'
+        mockBarJob.get_config.return_value = BAR_JOB
+
+        # create a mocked job object for baz
+        mockBazJob = mock.MagicMock(spec=jenkins.Job)
+        mockBazJob.name = 'baz'
+        mockBazJob.get_config.return_value = BAZ_JOB
+
+        # mock out Jenkins object
+        _Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
+        _Jenkins.return_value.get_jobs.return_value = \
+            iter([('foo', mockFooJob), ('bar', mockBarJob), ('baz', mockBazJob)])
+
+        out = self.runCommand('jobs retrieve --filter=\'ba*\'', exitCode=0)
+        self.assertEqual("", out)
+        self.assertFalse(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/bar.xml'))
+        self.assertEqual(open(self.workDir + '/jobs/bar.xml').read(), BAR_JOB)
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/baz.xml'))
+        self.assertEqual(open(self.workDir + '/jobs/baz.xml').read(), BAZ_JOB)
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins')
     def test_successful_job_retrieval_with_list(self, _Jenkins):
