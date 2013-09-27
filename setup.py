@@ -1,6 +1,6 @@
 # Copyright (c) 2013 SAS Institute, Inc
 #
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 
 VERSION = (0, 0, 1)
@@ -12,12 +12,6 @@ setup(
     author='Walter Scheper',
     author_email='walter.scheper@sas.com',
     license='Apache License 2.0',
-    packages=[
-        'jbutler',
-        'jbutler.commands',
-        'jbutler.jenkinsapi',
-        'jbutler.lib',
-        'jbutler.utils',
-        ],
+    packages=find_packages(exclude=['jbutler_test']),
     scripts=['commands/jbutler']
     )
