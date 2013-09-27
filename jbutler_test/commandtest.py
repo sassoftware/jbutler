@@ -19,9 +19,10 @@
 import os
 import mock
 
-from jenkinsapi import jenkins
 
+from jbutler.jenkinsapi.job import Job
 import jbutler
+
 from jbutler_test import jbutlerhelp
 
 
@@ -101,7 +102,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
 
         # create a job object
-        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob = mock.MagicMock(spec=Job)
         mockJob.name = 'foo'
         
         # mock an instance of Jenkins object that return mockJob
@@ -123,7 +124,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
 
         # create a job object
-        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob = mock.MagicMock(spec=Job)
         mockJob.name = 'foo'
 
         # mock an instance of Jenkins object that returns mockJob
@@ -145,7 +146,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
 
         # create a job object
-        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob = mock.MagicMock(spec=Job)
         mockJob.name = 'foo'
 
         # mock an instance of Jenkins object that return mockJob
@@ -168,7 +169,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkdirs('jobs')
 
         # create a mocked job object
-        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob = mock.MagicMock(spec=Job)
         mockJob.name = 'foo'
         mockJob.get_config.return_value = FOO_JOB
 
@@ -192,7 +193,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkdirs('jobs')
 
         # create a mocked job object
-        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob = mock.MagicMock(spec=Job)
         mockJob.name = 'foo'
         mockJob.get_config.return_value = FOO_JOB
 
@@ -217,7 +218,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkdirs('jobs')
 
         # create a mocked job object
-        mockJob = mock.MagicMock(spec=jenkins.Job)
+        mockJob = mock.MagicMock(spec=Job)
         mockJob.name = 'foo'
         mockJob.get_config.return_value = FOO_JOB
 
@@ -245,12 +246,12 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkdirs('jobs')
 
         # create a mocked job object for foo
-        mockFooJob = mock.MagicMock(spec=jenkins.Job)
+        mockFooJob = mock.MagicMock(spec=Job)
         mockFooJob.name = 'foo'
         mockFooJob.get_config.return_value = FOO_JOB
 
         # create a mocked job object for bar
-        mockBarJob = mock.MagicMock(spec=jenkins.Job)
+        mockBarJob = mock.MagicMock(spec=Job)
         mockBarJob.name = 'bar'
         mockBarJob.get_config.return_value = BAR_JOB
 
@@ -275,11 +276,11 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkdirs('jobs')
 
         # create a mocked job object
-        mockJobFoo = mock.MagicMock(spec=jenkins.Job)
+        mockJobFoo = mock.MagicMock(spec=Job)
         mockJobFoo.name = 'foo'
         mockJobFoo.get_config.return_value = FOO_JOB
 
-        mockJobBar = mock.MagicMock(spec=jenkins.Job)
+        mockJobBar = mock.MagicMock(spec=Job)
         mockJobBar.name = 'bar'
         mockJobBar.get_config.return_value = "A bar job\n"
 
@@ -305,17 +306,17 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkdirs('jobs')
 
         # create a mocked job object for foo
-        mockFooJob = mock.MagicMock(spec=jenkins.Job)
+        mockFooJob = mock.MagicMock(spec=Job)
         mockFooJob.name = 'foo'
         mockFooJob.get_config.return_value = FOO_JOB
 
         # create a mocked job object for bar
-        mockBarJob = mock.MagicMock(spec=jenkins.Job)
+        mockBarJob = mock.MagicMock(spec=Job)
         mockBarJob.name = 'bar'
         mockBarJob.get_config.return_value = BAR_JOB
 
         # create a mocked job object for baz
-        mockBazJob = mock.MagicMock(spec=jenkins.Job)
+        mockBazJob = mock.MagicMock(spec=Job)
         mockBazJob.name = 'baz'
         mockBazJob.get_config.return_value = BAZ_JOB
 

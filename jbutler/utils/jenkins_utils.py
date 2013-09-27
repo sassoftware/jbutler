@@ -15,8 +15,8 @@
 #
 
 
-from jenkinsapi.jenkins import Jenkins
-from jenkinsapi.utils.requester import Requester
+from jbutler.jenkinsapi.jenkins import Jenkins
+from jbutler.jenkinsapi.requester import Requester
 
 
 def server_factory(cfg):
