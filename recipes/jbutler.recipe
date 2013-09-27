@@ -21,8 +21,9 @@ class JButlerRecipe(PackageRecipe):
 
     buildRequires = [
         'python-setuptools',
-        'python-jenkinsapi:python',
-        'python-requests:python',
+        'python-lxml',
+        'python-jenkinsapi',
+        'python-requests',
         ]
 
     def setup(r):

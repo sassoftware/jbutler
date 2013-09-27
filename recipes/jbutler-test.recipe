@@ -27,7 +27,6 @@ class JbutlerTest(TestPackageRecipe):
 
     buildRequires = [
         'python-mock',
-        'python-jenkinsapi',
         'jbutler',
         ]
 
