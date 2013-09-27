@@ -93,12 +93,13 @@ class Views(_Views):
         data = {}
         for key, value in json_data.items():
             if key == 'useincluderegex':
-                data['useincluderegex'] = 'on'
                 data['includeRegex'] = value['includeRegex']
+                value = 'on'
             elif isinstance(value, bool):
-                data[key] = 'on' if value else 'off'
-            else:
-                data[key] = value
+                if not value:
+                    continue
+                value = 'on'
+            data[key] = value
 
         data['json'] = json_data
         data['Submit'] = 'OK'
