@@ -15,6 +15,7 @@ setup(
     packages=[
         'jbutler',
         'jbutler.commands',
+        'jbutler.jenkinsapi',
         'jbutler.lib',
         'jbutler.utils',
         ],
