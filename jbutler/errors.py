@@ -110,6 +110,13 @@ class CommandError(JButlerBaseError):
     params = ['msg']
 
 
+class SerializationError(JButlerBaseError):
+    """
+    B{C{SerializationError}} - error in expected serialized data
+    """
+    template = 'Malformed serialized data: %(key)s : %(value)s'
+    params = ['key', 'value']
+
 #: error that is output when a Python exception makes it to the command
 #: line.
 _ERROR_MESSAGE = '''

@@ -14,15 +14,4 @@
 # limitations under the License.
 #
 
-from . import configcommand
-from . import helpcommand
-from . import jobscommand
-from . import viewscommand
 
-
-commandList = [
-    configcommand.ConfigCommand,
-    helpcommand.HelpCommand,
-    jobscommand.JobCommand,
-    viewscommand.ViewCommand,
-    ]
