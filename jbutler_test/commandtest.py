@@ -65,10 +65,15 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkfile('jbutlerrc', contents=JBUTLER_RC)
 
         out = self.runCommand('config', exitCode=0)
-        expectedOut = 'password                  <password>\n' \
-                      'server                    http://jenkins.example.com\n' \
-                      'ssl_verify                True\n' \
-                      'username                  test\n'
+        expectedOut = (
+            'jobDir                    jobs\n'
+            'macroDir                  packages\n'
+            'password                  <password>\n'
+            'server                    http://jenkins.example.com\n'
+            'ssl_verify                True\n'
+            'templateDir               templates\n'
+            'username                  test\n'
+            )
 
         self.assertEqual(out, expectedOut)
 
@@ -76,10 +81,15 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.mkfile('jbutlerrc', contents=JBUTLER_RC)
 
         out = self.runCommand('config --show-passwords', exitCode=0)
-        expectedOut = 'password                  secret\n' \
-                      'server                    http://jenkins.example.com\n' \
-                      'ssl_verify                True\n' \
-                      'username                  test\n'
+        expectedOut = (
+            'jobDir                    jobs\n'
+            'macroDir                  packages\n'
+            'password                  secret\n'
+            'server                    http://jenkins.example.com\n'
+            'ssl_verify                True\n'
+            'templateDir               templates\n'
+            'username                  test\n'
+            )
 
         self.assertEqual(out, expectedOut)
 
@@ -88,10 +98,15 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         cmd = "config --config-file=%s/jbutlerrc_alt" % self.workDir
         out = self.runCommand(cmd, exitCode=0)
-        expectedOut = 'password                  <password>\n' \
-                      'server                    http://jenkins.example.com\n' \
-                      'ssl_verify                True\n' \
-                      'username                  test\n'
+        expectedOut = (
+            'jobDir                    jobs\n'
+            'macroDir                  packages\n'
+            'password                  <password>\n'
+            'server                    http://jenkins.example.com\n'
+            'ssl_verify                True\n'
+            'templateDir               templates\n'
+            'username                  test\n'
+            )
 
         self.assertEqual(out, expectedOut)
         

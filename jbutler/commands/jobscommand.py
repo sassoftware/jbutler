@@ -52,7 +52,7 @@ class JobCreateCommand(command.BaseCommand):
 
         projectDir = argSet.pop('project', os.getcwd())
         projectDir = os.path.abspath(projectDir)
-        jobsDir = os.path.join(projectDir, 'jobs')
+        jobsDir = os.path.join(projectDir, cfg.jobDir)
 
         # verify jobsDir exist
         if not (os.path.exists(jobsDir) and os.path.isdir(jobsDir)):
@@ -86,7 +86,7 @@ class JobRetrieveCommand(command.BaseCommand):
         jobFilter = argSet.pop('filter', None)
 
         projectDir = os.path.abspath(projectDir)
-        jobsDir = os.path.join(projectDir, 'jobs')
+        jobsDir = os.path.join(projectDir, cfg.jobDir)
 
         # verify jobsDir exist
         if not (os.path.exists(jobsDir) and os.path.isdir(jobsDir)):
