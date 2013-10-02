@@ -14,13 +14,15 @@
 # limitations under the License.
 #
 
-from . import configcommand
-from . import helpcommand
-from . import jobscommand
-from . import viewscommand
+from jbutler.commands import branchcommand
+from jbutler.commands import configcommand
+from jbutler.commands import helpcommand
+from jbutler.commands import jobscommand
+from jbutler.commands import viewscommand
 
 
 commandList = [
+    branchcommand.BranchCommand,
     configcommand.ConfigCommand,
     helpcommand.HelpCommand,
     jobscommand.JobCommand,

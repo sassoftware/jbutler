@@ -110,6 +110,11 @@ class CommandError(JButlerBaseError):
     params = ['msg']
 
 
+class TemplateError(JButlerBaseError):
+    template = '%(msg)s'
+    params = ['msg']
+
+
 class SerializationError(JButlerBaseError):
     """
     B{C{SerializationError}} - error in expected serialized data

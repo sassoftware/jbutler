@@ -96,7 +96,8 @@ def _main(argv, MainClass):
     except IOError as e:
         # allow broken pipe to exit
         if e.errno != errno.EPIPE:
-            raise
+            log.error(e)
+            return 1
     except KeyboardInterrupt:
         return 1
     except Exception as e:
