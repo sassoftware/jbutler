@@ -103,7 +103,6 @@ class Views(_Views):
 
         data['json'] = json_data
         data['Submit'] = 'OK'
-        print(data)
 
         self.jenkins.requester.post_and_confirm_status(
             url, data=urllib.urlencode(data))
