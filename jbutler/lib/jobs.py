@@ -91,10 +91,10 @@ def retrieveJobs(cfg, jobList, jobDir, jobFilter=None):
     server = jenkins_utils.server_factory(cfg)
 
     job_generator = _get_job_generator(server, jobList)
-    for jobName, jobObj in job_generator:
+    for _, jobName in job_generator:
         if not jobFilter.match(jobName):
             continue
-
+        jobObj = server.get_job(jobName)
         jobFile = os.path.join(jobDir, jobName + '.xml')
         with open(jobFile, 'w') as fh:
             fh.write(jobObj.get_config())
@@ -111,9 +111,9 @@ def _get_job_generator(server, jobList=None):
             if not server.has_job(jobName):
                 print("Server does not have job '%s'" % jobName)
                 continue
-            yield jobName, server.get_job(jobName)
+            yield None, jobName
 
     if not jobList:
-        return server.get_jobs()
+        return server.get_jobs_info()
     else:
         return _job_generator()

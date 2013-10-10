@@ -109,7 +109,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
             )
 
         self.assertEqual(out, expectedOut)
-        
+
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins',
                 spec=jbutler.utils.jenkins_utils.Jenkins)
     def test_successful_job_creation(self, _Jenkins):
@@ -119,9 +119,9 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         # create a job object
         mockJob = mock.MagicMock(spec=Job)
         mockJob.name = 'foo'
-        
+
         # mock an instance of Jenkins object that return mockJob
-        mockJenkins = _Jenkins.return_value 
+        mockJenkins = _Jenkins.return_value
         mockJenkins.has_job.return_value = False
         mockJenkins.create_job.return_value = mockJob
 
@@ -190,17 +190,17 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # mock out Jenkins object
         mockJenkins = _Jenkins.return_value
-        mockJenkins.get_jobs.return_value = iter([('foo', mockJob)])
+        mockJenkins.get_jobs_info.return_value = iter([('url', 'foo')])
+        mockJenkins.get_job.return_value = mockJob
 
         out = self.runCommand('jobs retrieve', exitCode=0)
 
-        # verify jbutler asks JenkinsAPI for jobs 
-        mockJenkins.get_jobs.assert_called_once_with()
+        # verify jbutler asks JenkinsAPI for jobs
+        mockJenkins.get_job.assert_called_once_with('foo')
 
         self.assertEqual("", out)
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
-
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins',
                 spec=jbutler.utils.jenkins_utils.Jenkins)
@@ -272,14 +272,14 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # mock out Jenkins object
         mockJenkins = _Jenkins.return_value
-        mockJenkins.get_jobs.return_value = \
-            iter([('foo', mockFooJob), ('bar', mockBarJob)])
+        mockJenkins.get_jobs_info.return_value = \
+            iter([('foourl', 'foo'), ('barurl', 'bar')])
+        mockJenkins.get_job.side_effect = [mockFooJob, mockBarJob]
 
         out = self.runCommand('jobs retrieve --filter=foo', exitCode=0)
 
-        # verify jbutler asks JenkinsAPI for jobs 
-        mockJenkins.get_jobs.assert_called_once_with()
-
+        # verify jbutler asks JenkinsAPI for jobs
+        mockJenkins.get_job.assert_called_once_with('foo')
         self.assertEqual("", out)
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
@@ -301,16 +301,17 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # mock out Jenkins object
         mockJenkins = _Jenkins.return_value
-        mockJenkins.get_jobs.return_value = iter([
-            ('foo', mockJobFoo),
-            ('bar', mockJobBar),
+        mockJenkins.get_jobs_info.return_value = iter([
+            ('foourl', 'foo'),
+            ('barurl', 'bar'),
             ])
+        mockJenkins.get_job.side_effect = [mockJobFoo]
 
         out = self.runCommand('jobs retrieve --filter=f.*', exitCode=0)
         self.assertEqual("", out)
 
         # verify jbutler asked JenkinsAPI for jobs
-        mockJenkins.get_jobs.assert_called_once_with()
+        mockJenkins.get_job.assert_called_once_with('foo')
 
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
@@ -337,13 +338,16 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # mock out Jenkins object
         mockJenkins = _Jenkins.return_value
-        mockJenkins.get_jobs.return_value = \
-            iter([('foo', mockFooJob), ('bar', mockBarJob), ('baz', mockBazJob)])
+        mockJenkins.get_jobs_info.return_value = \
+            iter([('foourl', 'foo'), ('barurl', 'bar'), ('bazurl', 'baz')])
+        mockJenkins.get_job.side_effect = [mockBarJob, mockBazJob]
 
         out = self.runCommand('jobs retrieve --filter=\'ba*\'', exitCode=0)
-        
-        # verify jbutler asks JenkinsAPI for jobs 
-        mockJenkins.get_jobs.assert_called_once_with()
+
+        # verify jbutler asks JenkinsAPI for jobs
+        self.assertEqual(
+            mockJenkins.get_job.call_args_list,
+            [mock.call('bar'), mock.call('baz')])
 
         self.assertEqual("", out)
         self.assertFalse(os.path.exists(self.workDir + '/jobs/foo.xml'))
@@ -351,4 +355,3 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual(open(self.workDir + '/jobs/bar.xml').read(), BAR_JOB)
         self.assertTrue(os.path.exists(self.workDir + '/jobs/baz.xml'))
         self.assertEqual(open(self.workDir + '/jobs/baz.xml').read(), BAZ_JOB)
-
