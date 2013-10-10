@@ -37,7 +37,7 @@ class JobCommand(command.CommandWithSubCommands):
 class JobCreateCommand(command.BaseCommand):
     help = 'Create a jenkins job'
     command = ['create']
-    paramHelp = '[job]...'
+    paramHelp = '[JOB]*'
     requireConfig = True
 
     def addParameters(self, argDef):
@@ -46,29 +46,28 @@ class JobCreateCommand(command.BaseCommand):
                              ' current working directory')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        _, jobsList = self.requireParameters(args, allowExtra=True)
-        if not jobsList:
-            jobsList = None
+        _, jobList = self.requireParameters(args, allowExtra=True)
+        if not jobList:
+            jobList = None
 
         projectDir = argSet.pop('project', os.getcwd())
         projectDir = os.path.abspath(projectDir)
-        jobsDir = os.path.join(projectDir, cfg.jobDir)
+        jobDir = os.path.join(projectDir, cfg.jobDir)
 
-        # verify jobsDir exist
-        if not (os.path.exists(jobsDir) and os.path.isdir(jobsDir)):
+        # verify jobDir exist
+        if not (os.path.exists(jobDir) and os.path.isdir(jobDir)):
             raise errors.CommandError(
                 'no jobs directory found in %s' % (projectDir)
                 )
 
-        jobs.createJobs(cfg, jobsList, jobsDir)
-
+        jobs.createJobs(cfg, jobList, jobDir)
 JobCommand.registerSubCommand('create', JobCreateCommand)
 
 
 class JobRetrieveCommand(command.BaseCommand):
     help = 'Retrieve a jenkins job'
     command = ['retrieve']
-    paramHelp = '[job name]*'
+    paramHelp = '[JOB]*'
     requireConfig = True
 
     def addLocalParameters(self, argDef):
@@ -78,22 +77,54 @@ class JobRetrieveCommand(command.BaseCommand):
         argDef['filter'] = (options.OPT_PARAM, 'Filter to apply to jobs')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        _, jobsList = self.requireParameters(args, allowExtra=True)
-        if not jobsList:
-            jobsList = None
+        _, jobList = self.requireParameters(args, allowExtra=True)
+        if not jobList:
+            jobList = None
 
         projectDir = argSet.pop('project', os.getcwd())
         jobFilter = argSet.pop('filter', None)
 
         projectDir = os.path.abspath(projectDir)
-        jobsDir = os.path.join(projectDir, cfg.jobDir)
+        jobDir = os.path.join(projectDir, cfg.jobDir)
 
-        # verify jobsDir exist
-        if not (os.path.exists(jobsDir) and os.path.isdir(jobsDir)):
+        # verify jobDir exist
+        if not (os.path.exists(jobDir) and os.path.isdir(jobDir)):
             raise errors.CommandError(
                 'no jobs directory found in %s' % (projectDir)
                 )
 
-        jobs.retrieveJobs(cfg, jobsList, jobsDir, jobFilter)
-
+        jobs.retrieveJobs(cfg, jobList, jobDir, jobFilter)
 JobCommand.registerSubCommand('retrieve', JobRetrieveCommand)
+
+
+class JobDisableCommand(command.BaseCommand):
+    help = 'Disable a jenkins job'
+    command = ['disable', 'off']
+    paramHelp = '[JOB]*'
+    requireConfig = True
+
+    def addLocalParameters(self, argDef):
+        super(JobRetrieveCommand, self).addLocalParameters(argDef)
+        argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
+                             ' current working directory')
+        argDef['filter'] = (options.OPT_PARAM, 'Filter to apply to jobs')
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        _, jobList = self.requireParameters(args, allowExtra=True)
+        if not jobList:
+            jobList = None
+
+        projectDir = argSet.pop('project', os.getcwd())
+        jobFilter = argSet.pop('filter', None)
+
+        projectDir = os.path.abspath(projectDir)
+        jobDir = os.path.join(projectDir, cfg.jobDir)
+
+        # verify jobDir exist
+        if not (os.path.exists(jobDir) and os.path.isdir(jobDir)):
+            raise errors.CommandError(
+                'no jobs directory found in %s' % (projectDir)
+                )
+
+        jobs.disableJobs(cfg, jobList, jobDir, jobFilter)
+JobCommand.registerSubCommand('disable', JobRetrieveCommand)

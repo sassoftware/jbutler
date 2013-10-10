@@ -36,7 +36,7 @@ class ViewCommand(command.CommandWithSubCommands):
 class ViewCreateCommand(command.BaseCommand):
     help = 'Create a jenkins view from config file'
     commands = ['create']
-    paramHelp = '[view name]*'
+    paramHelp = '[VIEW]*'
     requireConfig = True
 
     def addParameters(self, argDef):
@@ -45,21 +45,21 @@ class ViewCreateCommand(command.BaseCommand):
                              ' defaults to current working directory')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        _, viewsList = self.requireParameters(args, allowExtra=True)
-        if not viewsList:
-            viewsList = None
+        _, viewList = self.requireParameters(args, allowExtra=True)
+        if not viewList:
+            viewList = None
 
         projectDir = argSet.pop('project', os.getcwd())
         projectDir = os.path.abspath(projectDir)
-        viewsFile = os.path.join(projectDir, 'views.yml')
+        viewFile = os.path.join(projectDir, 'views.yml')
 
         # verify viewsDir exists
-        if not (os.path.exists(viewsFile) and os.path.isfile(viewsFile)):
+        if not (os.path.exists(viewFile) and os.path.isfile(viewFile)):
             raise errors.CommandError(
                 'no views configuration found at %s' % (projectDir)
                 )
 
-        views.createViews(cfg, viewsList, viewsFile)
+        views.createViews(cfg, viewList, viewFile)
 
 ViewCommand.registerSubCommand('create', ViewCreateCommand)
 
@@ -67,7 +67,7 @@ ViewCommand.registerSubCommand('create', ViewCreateCommand)
 class ViewRetrieveComand(command.BaseCommand):
     help = 'Retrieve view, and all sub-views from jenkins server'
     commands = ['retrieve']
-    paramHelp = '[view name]*'
+    paramHelp = '[VIEW]*'
     requireConfig = True
 
     def addLocalParameters(self, argDef):
@@ -76,14 +76,14 @@ class ViewRetrieveComand(command.BaseCommand):
                              ' current working directory')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        _, viewsList = self.requireParameters(args, allowExtra=True)
-        if not viewsList:
-            viewsList = None
+        _, viewList = self.requireParameters(args, allowExtra=True)
+        if not viewList:
+            viewList = None
 
         projectDir = argSet.pop('project', os.getcwd())
         projectDir = os.path.abspath(projectDir)
-        viewsFile = os.path.join(projectDir, 'views.yml')
+        viewFile = os.path.join(projectDir, 'views.yml')
 
-        views.retrieveViews(cfg, viewsList, viewsFile)
+        views.retrieveViews(cfg, viewList, viewFile)
 
 ViewCommand.registerSubCommand('retrieve', ViewRetrieveComand)
