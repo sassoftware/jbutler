@@ -21,7 +21,7 @@ class BranchTests(jbutlerhelp.JButlerHelper):
         self.doc = etree.fromstring(self.xml)
         self.macros = conarymacros.Macros({'data': 'some data'})
         self.paths = {
-            '/foo/bar': ['%(data)s'],
+            '/foo/bar': '%(data)s',
             }
 
     def test_updateJobData(self):
@@ -36,12 +36,12 @@ class BranchTests(jbutlerhelp.JButlerHelper):
                     "<bar>some data</bar>"
                     "<baz>no template</baz>"
                     "</foo>")
-        self.paths['/foo/baz'] = ['no template']
+        self.paths['/foo/baz'] = 'no template'
         newDoc = branch._updateJobData(self.doc, self.paths, self.macros)
         self.assertEqual(etree.tostring(newDoc), expected)
 
     def test_updateJobData_elements_error(self):
-        self.paths['/foo/bar'].append('%(data)s 2')
+        self.paths['/foo/spam'] = '%(data)s 2'
         self.assertRaises(jberrors.TemplateError, branch._updateJobData,
                           self.doc, self.paths, self.macros)
 
