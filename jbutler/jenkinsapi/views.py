@@ -9,8 +9,7 @@ import urllib
 from jenkinsapi.views import Views as _Views
 import yaml
 
-from jbutler.jenkinsapi.view import View
-from jbutler import errors
+from .view import View
 
 
 (LIST_VIEW, NESTED_VIEW) = (_Views.LIST_VIEW, _Views.NESTED_VIEW)

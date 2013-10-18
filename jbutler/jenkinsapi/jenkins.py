@@ -5,8 +5,8 @@
 
 from jenkinsapi.jenkins import Jenkins as _Jenkins
 
-from jbutler.jenkinsapi.view import View
-from jbutler.jenkinsapi.views import Views
+from .view import View
+from .views import Views
 
 
 class Jenkins(_Jenkins):

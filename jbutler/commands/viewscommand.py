@@ -21,8 +21,8 @@ import os
 
 from conary.lib import options
 
-from jbutler import errors
-from jbutler.lib import command, views
+from .. import errors
+from ..lib import command, views
 
 
 class ViewCommand(command.CommandWithSubCommands):

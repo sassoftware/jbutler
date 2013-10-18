@@ -7,9 +7,8 @@ import os
 
 from conary.lib import options
 
-from jbutler import errors
-from jbutler.lib import branch
-from jbutler.lib import command
+from .. import errors
+from ..lib import branch, command
 
 
 class BranchCommand(command.BaseCommand):

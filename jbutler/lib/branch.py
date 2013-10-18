@@ -11,7 +11,7 @@ from conary.build import macros as conarymacros
 from lxml import etree
 import yaml
 
-from jbutler import errors
+from .. import errors
 
 
 def branchJobs(macroList, templateList, jobDir, updateTemplate=False):

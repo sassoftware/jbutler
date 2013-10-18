@@ -18,7 +18,7 @@
 """
 Library for working with jenkins views
 """
-from jbutler.utils import jenkins_utils
+from ..utils import jenkins_utils
 
 
 def createViews(cfg, viewList, viewFile):
