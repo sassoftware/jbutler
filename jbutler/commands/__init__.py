@@ -6,6 +6,7 @@ from . import (
     configcommand,
     helpcommand,
     jobscommand,
+    mergecommand,
     viewscommand,
     )
 
@@ -15,5 +16,6 @@ commandList = [
     configcommand.ConfigCommand,
     helpcommand.HelpCommand,
     jobscommand.JobCommand,
+    mergecommand.MergeCommand,
     viewscommand.ViewCommand,
     ]
