@@ -30,7 +30,6 @@ def mergeJobs(templateList, jobDir):
 
         # load the matching job file
         jobFile = template.get('name') % macros
-        sys.stdout.write('Processing ' + jobFile + '\n')
         with open(os.path.join(jobDir, jobFile)) as fh:
             jobData = objectify.parse(fh)
 
@@ -46,17 +45,23 @@ def mergeJobs(templateList, jobDir):
 
 def _mergeTemplate(template, job, macros):
     newTemplate = copy.copy(template)
-    template_pairs = _mergeTemplateHelper(job.getroot(), template, job, macros)
-    newTemplate['template'] = dict((k, v) for k, v in template_pairs)
+    template_pairs = _mergeTemplateHelper(
+        job.getroot(),
+        template,
+        job,
+        macros,
+        )
+    newTemplate['templates'] = dict((k, v) for k, v in template_pairs)
     return newTemplate
 
 
-def _mergeTemplateHelper(node, template, job, macros):
+def _mergeTemplateHelper(node, jobTemplate, jobConfig, macros):
     template_pairs = []
+    templates = jobTemplate.get('templates', {})
 
     # process node
-    xpath = job.getpath(node)
-    old_template = template.get(xpath, '')
+    xpath = jobConfig.getpath(node)
+    old_template = templates.get(xpath, '')
     new_template = node.text or ''
     for macro, value in macros.itermacros():
         new_template = new_template.replace(value, '%%(%s)s' % macro)
@@ -75,6 +80,7 @@ def _mergeTemplateHelper(node, template, job, macros):
         prompt = 'Add this node to template [Y/n/q]? '
 
     if prompt:
+        sys.stdout.write('File: ' + jobTemplate.get('name') % macros + '\n')
         sys.stdout.write(xpath + ':\n')
         diff = difflib.ndiff([old_template + '\n'], [new_template + '\n'])
         sys.stdout.write(''.join(diff) + '\n')
@@ -92,9 +98,11 @@ def _mergeTemplateHelper(node, template, job, macros):
                 template_pairs.append((xpath, old_template))
         elif response in QUIT:
             raise KeyboardInterrupt
+    elif old_template:
+        template_pairs.append((xpath, old_template))
 
     for child in node.iterchildren():
         template_pairs.extend(
-            _mergeTemplateHelper(child, template, job, macros))
+            _mergeTemplateHelper(child, jobTemplate, jobConfig, macros))
 
     return template_pairs

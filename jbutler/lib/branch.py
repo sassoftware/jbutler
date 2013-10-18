@@ -35,7 +35,7 @@ def branchJobs(macroList, templateList, jobDir, updateTemplate=False):
         # update the jobData
         try:
             newJobData = _updateJobData(
-                jobData, template.get('template'), newMacros)
+                jobData, template.get('templates'), newMacros)
         except errors.TemplateError as e:
             raise errors.CommandError(
                 'Job "%s" %s' % (curFile, e))
@@ -54,13 +54,10 @@ def branchJobs(macroList, templateList, jobDir, updateTemplate=False):
 
 def _updateJobData(doc, paths, macros):
     newDoc = copy.copy(doc)
-    for path, values in paths.iteritems():
-        for element, value in itertools.izip_longest(
-                newDoc.xpath(path), values):
-            if element is None:
-                raise errors.TemplateError(
-                    'has fewer elements "%s" than template' % path)
-            if value is None:
-                continue
+    for path, value in paths.iteritems():
+        try:
+            element = newDoc.xpath(path)[0]
             element.text = value % macros
+        except IndexError:
+            raise errors.TemplateError('has no element "%s"' % path)
     return newDoc
