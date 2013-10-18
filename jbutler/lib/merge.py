@@ -57,7 +57,9 @@ def _mergeTemplate(template, job, macros):
 
 def _mergeTemplateHelper(node, jobTemplate, jobConfig, macros):
     template_pairs = []
-    templates = jobTemplate.get('templates', {})
+    templates = jobTemplate.get('templates')
+    if templates is None:
+        templates = {}
 
     # process node
     xpath = jobConfig.getpath(node)
