@@ -40,8 +40,7 @@ class JobCreateCommand(command.BaseCommand):
     paramHelp = '[JOB]*'
     requireConfig = True
 
-    def addParameters(self, argDef):
-        super(JobCreateCommand, self).addParameters(argDef)
+    def addLocalParameters(self, argDef):
         argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
                              ' current working directory')
 
@@ -71,7 +70,6 @@ class JobRetrieveCommand(command.BaseCommand):
     requireConfig = True
 
     def addLocalParameters(self, argDef):
-        super(JobRetrieveCommand, self).addLocalParameters(argDef)
         argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
                              ' current working directory')
         argDef['filter'] = (options.OPT_PARAM, 'Filter to apply to jobs')
@@ -99,15 +97,15 @@ JobCommand.registerSubCommand('retrieve', JobRetrieveCommand)
 
 class JobDisableCommand(command.BaseCommand):
     help = 'Disable a jenkins job'
-    command = ['disable', 'off']
+    commands = ['disable', 'off']
     paramHelp = '[JOB]*'
     requireConfig = True
 
     def addLocalParameters(self, argDef):
-        super(JobRetrieveCommand, self).addLocalParameters(argDef)
         argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
                              ' current working directory')
         argDef['filter'] = (options.OPT_PARAM, 'Filter to apply to jobs')
+        argDef['force'] = (options.NO_PARAM, 'Force update of local config')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
         _, jobList = self.requireParameters(args, allowExtra=True)
@@ -116,6 +114,7 @@ class JobDisableCommand(command.BaseCommand):
 
         projectDir = argSet.pop('project', os.getcwd())
         jobFilter = argSet.pop('filter', None)
+        force = argSet.pop('force', False)
 
         projectDir = os.path.abspath(projectDir)
         jobDir = os.path.join(projectDir, cfg.jobDir)
@@ -126,5 +125,39 @@ class JobDisableCommand(command.BaseCommand):
                 'no jobs directory found in %s' % (projectDir)
                 )
 
-        jobs.disableJobs(cfg, jobList, jobDir, jobFilter)
-JobCommand.registerSubCommand('disable', JobRetrieveCommand)
+        jobs.disableJobs(cfg, jobList, jobDir, jobFilter, force)
+JobCommand.registerSubCommand('disable', JobDisableCommand)
+
+
+class JobEnableCommand(command.BaseCommand):
+    help = 'Disable a jenkins job'
+    commands = ['enable', 'on']
+    paramHelp = '[JOB]*'
+    requireConfig = True
+
+    def addLocalParameters(self, argDef):
+        argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
+                             ' current working directory')
+        argDef['filter'] = (options.OPT_PARAM, 'Filter to apply to jobs')
+        argDef['force'] = (options.NO_PARAM, 'Force update of local config')
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        _, jobList = self.requireParameters(args, allowExtra=True)
+        if not jobList:
+            jobList = None
+
+        projectDir = argSet.pop('project', os.getcwd())
+        jobFilter = argSet.pop('filter', None)
+        force = argSet.pop('force', False)
+
+        projectDir = os.path.abspath(projectDir)
+        jobDir = os.path.join(projectDir, cfg.jobDir)
+
+        # verify jobDir exist
+        if not (os.path.exists(jobDir) and os.path.isdir(jobDir)):
+            raise errors.CommandError(
+                'no jobs directory found in %s' % (projectDir)
+                )
+
+        jobs.enableJobs(cfg, jobList, jobDir, jobFilter, force)
+JobCommand.registerSubCommand('enable', JobEnableCommand)

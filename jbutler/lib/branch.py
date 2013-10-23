@@ -4,14 +4,17 @@
 
 
 import copy
-import itertools
 import os
 
 from conary.build import macros as conarymacros
 from lxml import etree
 import yaml
 
-from .. import errors
+from .. import (
+    LXML_KWARGS,
+    YAML_KWARGS,
+    errors,
+    )
 
 
 def branchJobs(macroList, templateList, jobDir, updateTemplate=False):
@@ -42,14 +45,13 @@ def branchJobs(macroList, templateList, jobDir, updateTemplate=False):
 
         # write new job data to newFile
         with open(os.path.join(jobDir, newFile), 'w') as fh:
-            fh.write(etree.tostring(newJobData, xml_declaration=True,
-                                    encoding='utf-8'))
+            fh.write(etree.tostring(newJobData, **LXML_KWARGS))
 
         if updateTemplate:
             template['macros'] = [
                 [macro, value] for macro, value in newMacros.iteritems()]
             with open(templateFile, 'w') as fh:
-                fh.write(yaml.safe_dump(template, default_flow_style=False))
+                fh.write(yaml.safe_dump(template, **YAML_KWARGS))
 
 
 def _updateJobData(doc, paths, macros):
