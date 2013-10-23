@@ -2,20 +2,6 @@
 #
 # Copyright (c) SAS Institute Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-
 import os
 import mock
 
@@ -27,15 +13,24 @@ from jbutler_test import jbutlerhelp
 
 
 FOO_JOB = """\
-Contents of Foo job.
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+    <foo>Contents of Foo job.</foo>
+</project>
 """
 
 BAR_JOB = """\
-Contents of Bar Job.
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+    <bar>Contents of Bar Job.</bar>
+</project>
 """
 
 BAZ_JOB = """\
-Contents of Baz Job.
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+    <baz>Contents of Baz Job.</baz>
+</project>
 """
 
 JBUTLER_RC = """\
@@ -44,6 +39,7 @@ server                    http://jenkins.example.com
 ssl_verify                True
 username                  test
 """
+
 
 class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
     """
@@ -67,7 +63,6 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand('config', exitCode=0)
         expectedOut = (
             'jobDir                    jobs\n'
-            'macroDir                  packages\n'
             'password                  <password>\n'
             'server                    http://jenkins.example.com\n'
             'ssl_verify                True\n'
@@ -83,7 +78,6 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand('config --show-passwords', exitCode=0)
         expectedOut = (
             'jobDir                    jobs\n'
-            'macroDir                  packages\n'
             'password                  secret\n'
             'server                    http://jenkins.example.com\n'
             'ssl_verify                True\n'
@@ -100,7 +94,6 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         out = self.runCommand(cmd, exitCode=0)
         expectedOut = (
             'jobDir                    jobs\n'
-            'macroDir                  packages\n'
             'password                  <password>\n'
             'server                    http://jenkins.example.com\n'
             'ssl_verify                True\n'
