@@ -51,11 +51,13 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual(out, 'error: no jobs directory found in %s\n' %
                          self.workDir)
 
-    def test_empty_jobs_dir(self):
+    @mock.patch('jbutler.utils.jenkins_utils.Jenkins',
+                spec=jbutler.utils.jenkins_utils.Jenkins)
+    def test_empty_jobs_dir(self, _Jenkins):
         self.mkdirs('jobs')
 
         out = self.runCommand('jobs create', exitCode=0)
-        self.assertEqual(out, 'No jobs found\n')
+        self.assertEqual(out, '')
 
     def test_successful_config_show(self):
         self.mkfile('jbutlerrc', contents=JBUTLER_RC)
@@ -122,14 +124,15 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual("", out)
 
         # verify JenkinsAPI asked to create job
-        mockJenkins.create_job.assert_called_once_with(config=FOO_JOB,
-                jobname='foo')
+        mockJenkins.create_job.assert_called_once_with(
+            config=FOO_JOB, jobname='foo')
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins',
                 spec=jbutler.utils.jenkins_utils.Jenkins)
     def test_successful_job_creation_with_list(self, _Jenkins):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+        self.mkfile('jobs/bar.xml', contents=BAR_JOB)
 
         # create a job object
         mockJob = mock.MagicMock(spec=Job)
@@ -140,12 +143,12 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         mockJenkins.has_job.return_value = False
         mockJenkins.create_job.return_value = mockJob
 
-        out = self.runCommand('jobs create foo', exitCode=0)
+        out = self.runCommand('jobs create jobs/foo.xml', exitCode=0)
         self.assertEqual("", out)
 
         # verify JenkinsAPI asked to create job
-        mockJenkins.create_job.assert_called_once_with(config=FOO_JOB,
-                jobname='foo')
+        mockJenkins.create_job.assert_called_once_with(
+            config=FOO_JOB, jobname='foo')
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins',
                 spec=jbutler.utils.jenkins_utils.Jenkins)
@@ -162,14 +165,15 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         mockJenkins.has_job.return_value = False
         mockJenkins.create_job.return_value = mockJob
 
-        out = self.runCommand('jobs create foo bar', exitCode=0)
+        out = self.runCommand(
+            'jobs create jobs/foo.xml jobs/bar.xml', exitCode=1)
         self.assertEqual(
-            "These jobs were not found in the jobs directory: bar.xml\n",
+            "error: [Errno 2] No such file or directory: 'jobs/bar.xml'\n",
             out)
 
         # verify JenkinsAPI asked to create job
-        mockJenkins.create_job.assert_called_once_with(config=FOO_JOB,
-                jobname='foo')
+        mockJenkins.create_job.assert_called_once_with(
+            config=FOO_JOB, jobname='foo')
 
     @mock.patch('jbutler.utils.jenkins_utils.Jenkins',
                 spec=jbutler.utils.jenkins_utils.Jenkins)

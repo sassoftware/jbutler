@@ -26,38 +26,22 @@ def createJobs(cfg, jobList, jobDir):
     @type cfg: list
     @param projectPath: path to directory containing jenkins job config files
     """
-    jobs = []
-    if not os.path.exists(jobDir):
-        raise errors.CommandError("no such directory: '%s'" % jobDir)
-
-    # generate a list of job files in jobDir
-    jobFiles = [os.path.join(jobDir, f) for f in os.listdir(jobDir)
-                if f.endswith('.xml')]
-
-    if not jobFiles:
-        print('No jobs found')
-        return jobs
+    if not jobList:
+        jobList = [os.path.join(jobDir, path) for path in os.listdir(jobDir)]
 
     server = jenkins_utils.server_factory(cfg)
-    for jobFile in jobFiles:
+
+    jobs = []
+    for jobFile in jobList:
         jobName, _ = os.path.splitext(jobFile)
         jobName = os.path.basename(jobName)
 
-        # only create jobs that the user supplied
-        if jobList and jobName not in jobList:
+        if server.has_job(jobName):
             continue
-        elif jobList:
-            jobList.remove(jobName)
 
         with open(jobFile) as fh:
-            if server.has_job(jobName):
-                continue
             j = server.create_job(jobname=jobName, config=fh.read())
-            jobs.append(j)
-
-    if jobList:
-        print("These jobs were not found in the jobs directory: %s" %
-              ', '.join([j + '.xml' for j in jobList]))
+        jobs.append(j)
     return jobs
 
 
