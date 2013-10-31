@@ -4,6 +4,7 @@
 """
 Library for working with jenkins jobs
 """
+import logging
 import re
 import os
 
@@ -14,6 +15,9 @@ from .. import (
     errors,
     )
 from ..utils import jenkins_utils
+
+
+log = logging.getLogger(__name__)
 
 
 def createJobs(cfg, jobList, jobDir):
@@ -134,6 +138,37 @@ def enableJobs(cfg, jobList, jobDir, jobFilter=None, force=False):
         jobObj.enable()
         jobs.append(jobObj)
     return jobs
+
+
+def deleteJobs(cfg, jobList, force=False):
+    '''
+    Delete the jobs in jobList. If force is True, also delete the local
+    config file
+
+    @param cfg: configuration
+    @type cfg: JButlerCfg
+    @param jobList: list of job config files
+    @type jobList: list
+    @param force: if true, delete the local config files
+    @type: bool
+    '''
+    server = jenkins_utils.server_factory(cfg)
+
+    deleted_jobs = []
+    for jobFile in jobList:
+        if not os.path.exists(jobFile):
+            raise errors.CommandError(
+                "[Errno 2]: No such file or directory: '%s'" % jobFile)
+
+        jobName, _ = os.path.splitext(os.path.basename(jobFile))
+        if server.has_job(jobName):
+            server.delete_job(jobName)
+            deleted_jobs.append(jobFile)
+            if force:
+                os.remove(jobFile)
+        else:
+            log.warning("Job does not exist on server: '%s'" % jobName)
+    return deleted_jobs
 
 
 def _get_job_generator(server, jobList=None):

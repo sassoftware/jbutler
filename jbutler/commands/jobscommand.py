@@ -161,3 +161,23 @@ class JobEnableCommand(command.BaseCommand):
 
         jobs.enableJobs(cfg, jobList, jobDir, jobFilter, force)
 JobCommand.registerSubCommand('enable', JobEnableCommand)
+
+
+class JobDeleteCommand(command.BaseCommand):
+    help = 'Delete a jenkins job'
+    commands = ['delete']
+    paramHelp = '<JOB>+'
+    requireConfig = True
+
+    def addLocalParameters(self, argDef):
+        argDef['force'] = (options.NO_PARAM, 'Also delete local config file')
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        _, jobList = self.requireParameters(args, allowExtra=True)
+        if not jobList:
+            raise errors.CommandError('Missing JOB arguement')
+
+        force = argSet.pop('force', False)
+
+        jobs.deleteJobs(cfg, jobList, force)
+JobCommand.registerSubCommand('delete', JobDeleteCommand)
