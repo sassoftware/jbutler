@@ -18,7 +18,6 @@
 job command
 """
 import os
-import re
 
 from conary.lib import options
 
@@ -133,3 +132,13 @@ class JobDeleteCommand(JobSubCommand):
         force = argSet.pop('force', False)
         jobs.deleteJobs(cfg, self.jobList, force)
 JobCommand.registerSubCommand('delete', JobDeleteCommand)
+
+
+class JobUpdateCommand(JobSubCommand):
+    help = 'Update a jenkins job'
+    commands = ['update']
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        JobSubCommand.runCommand(self, cfg, argSet, args, **kwargs)
+        jobs.updateJobs(cfg, self.jobList)
+JobCommand.registerSubCommand('update', JobUpdateCommand)

@@ -44,24 +44,10 @@ username                  test
 """
 
 
-class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
+class ConfigCommandTest(jbutlerhelp.JButlerCommandTest):
     """
     Test the jbutler jobs command and sub-commands
     """
-
-    def setUp(self):
-        jbutlerhelp.JButlerCommandTest.setUp(self)
-
-        self.Jenkins_patcher = mock.patch(
-            'jbutler.utils.jenkins_utils.Jenkins',
-            spec=jbutler.utils.jenkins_utils.Jenkins)
-        self.Jenkins = self.Jenkins_patcher.start()
-
-    def tearDown(self):
-        jbutlerhelp.JButlerCommandTest.tearDown(self)
-
-        self.Jenkins_patcher.stop()
-
     def test_successful_config_show(self):
         self.mkfile('jbutlerrc', contents=JBUTLER_RC)
 
@@ -107,6 +93,25 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
             )
 
         self.assertEqual(out, expectedOut)
+
+
+class JobsCreateCommandTest(jbutlerhelp.JButlerCommandTest):
+    """
+    Test the jbutler jobs command and sub-commands
+    """
+
+    def setUp(self):
+        jbutlerhelp.JButlerCommandTest.setUp(self)
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins',
+            spec=jbutler.utils.jenkins_utils.Jenkins)
+        self.Jenkins = self.Jenkins_patcher.start()
+
+    def tearDown(self):
+        jbutlerhelp.JButlerCommandTest.tearDown(self)
+
+        self.Jenkins_patcher.stop()
 
     def test_create_no_jobs(self):
         out = self.runCommand('jobs create', exitCode=1)
@@ -173,6 +178,25 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         # verify JenkinsAPI asked to create job
         self.Jenkins.return_value.create_job.assert_called_once_with(
             config=FOO_JOB, jobname='foo')
+
+
+class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
+    """
+    Test the jbutler jobs command and sub-commands
+    """
+
+    def setUp(self):
+        jbutlerhelp.JButlerCommandTest.setUp(self)
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins',
+            spec=jbutler.utils.jenkins_utils.Jenkins)
+        self.Jenkins = self.Jenkins_patcher.start()
+
+    def tearDown(self):
+        jbutlerhelp.JButlerCommandTest.tearDown(self)
+
+        self.Jenkins_patcher.stop()
 
     def test_successful_job_retrieval(self):
         self.mkdirs('jobs')
@@ -335,6 +359,25 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertTrue(os.path.exists(self.workDir + '/jobs/baz.xml'))
         self.assertEqual(open(self.workDir + '/jobs/baz.xml').read(), BAZ_JOB)
 
+
+class JobsDisableCommandTest(jbutlerhelp.JButlerCommandTest):
+    """
+    Test the jbutler jobs command and sub-commands
+    """
+
+    def setUp(self):
+        jbutlerhelp.JButlerCommandTest.setUp(self)
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins',
+            spec=jbutler.utils.jenkins_utils.Jenkins)
+        self.Jenkins = self.Jenkins_patcher.start()
+
+    def tearDown(self):
+        jbutlerhelp.JButlerCommandTest.tearDown(self)
+
+        self.Jenkins_patcher.stop()
+
     def test_disable_no_jobs(self):
         out = self.runCommand('jobs disable', exitCode=1)
         self.assertEqual(
@@ -379,6 +422,25 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
             open(self.workDir + '/jobs/foo.xml').read()
             )
         mockJob.disable.assert_called_once_with()
+
+
+class JobsEnableCommandTest(jbutlerhelp.JButlerCommandTest):
+    """
+    Test the jbutler jobs command and sub-commands
+    """
+
+    def setUp(self):
+        jbutlerhelp.JButlerCommandTest.setUp(self)
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins',
+            spec=jbutler.utils.jenkins_utils.Jenkins)
+        self.Jenkins = self.Jenkins_patcher.start()
+
+    def tearDown(self):
+        jbutlerhelp.JButlerCommandTest.tearDown(self)
+
+        self.Jenkins_patcher.stop()
 
     def test_enable_no_jobs(self):
         out = self.runCommand('jobs enable', exitCode=1)
@@ -469,6 +531,25 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
             )
         self.assertEqual(mockJob.enable.call_args_list, [])
 
+
+class JobsDeleteCommandTest(jbutlerhelp.JButlerCommandTest):
+    """
+    Test the jbutler jobs command and sub-commands
+    """
+
+    def setUp(self):
+        jbutlerhelp.JButlerCommandTest.setUp(self)
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins',
+            spec=jbutler.utils.jenkins_utils.Jenkins)
+        self.Jenkins = self.Jenkins_patcher.start()
+
+    def tearDown(self):
+        jbutlerhelp.JButlerCommandTest.tearDown(self)
+
+        self.Jenkins_patcher.stop()
+
     def test_delete_no_jobs(self):
         out = self.runCommand('jobs delete', exitCode=1)
         self.assertEqual(
@@ -525,4 +606,101 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.assertEqual(
             self.Jenkins.return_value.delete_job.call_args_list,
             [mock.call('foo')],
+            )
+
+
+class JobsUpdateCommandTest(jbutlerhelp.JButlerCommandTest):
+    """
+    Test the jbutler jobs command and sub-commands
+    """
+
+    def setUp(self):
+        jbutlerhelp.JButlerCommandTest.setUp(self)
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins',
+            spec=jbutler.utils.jenkins_utils.Jenkins)
+        self.Jenkins = self.Jenkins_patcher.start()
+
+    def tearDown(self):
+        jbutlerhelp.JButlerCommandTest.tearDown(self)
+
+        self.Jenkins_patcher.stop()
+
+    def test_update(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        self.Jenkins.return_value.has_job.return_value = True
+
+        out = self.runCommand('jobs update jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config=FOO_JOB)],
+            )
+
+    def test_update_missing_config(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        self.Jenkins.return_value.has_job.return_value = True
+
+        out = self.runCommand(
+            'jobs update jobs/foo.xml jobs/bar.xml', exitCode=1)
+        self.assertEqual(
+            out,
+            "error: [Errno 2] No such file or directory: 'jobs/bar.xml'\n",
+            )
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config=FOO_JOB)],
+            )
+
+    def test_update_missing_job(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+        self.mkfile('jobs/bar.xml', contents=BAR_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        self.Jenkins.return_value.has_job.side_effect = (True, False)
+
+        out = self.runCommand(
+            'jobs update jobs/foo.xml jobs/bar.xml', exitCode=0)
+        self.assertEqual(out, "warning: job does not exist on server: 'bar'\n")
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config=FOO_JOB)],
+            )
+
+    def test_update_multiple_jobs(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+        self.mkfile('jobs/bar.xml', contents=BAR_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        self.Jenkins.return_value.has_job.side_effect = (True, True)
+
+        out = self.runCommand(
+            'jobs update jobs/foo.xml jobs/bar.xml', exitCode=0)
+        self.assertEqual(out, "")
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config=FOO_JOB),
+             mock.call(jobname='bar', config=BAR_JOB),
+             ],
             )

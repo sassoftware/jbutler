@@ -126,3 +126,136 @@ class DeleteJobsTests(jbutlerhelp.JButlerHelper):
 
         self.assertTrue(os.path.exists(self.foo_filename))
         self.Jenkins.return_value.delete_job.assert_called_once_with('foo')
+
+
+class UpdateJobsTests(jbutlerhelp.JButlerHelper):
+    '''
+    Tests for update job
+    '''
+    def setUp(self):
+        jbutlerhelp.JButlerHelper.setUp(self)
+
+        self.cfg = butlercfg.ButlerConfiguration()
+        self.cfg.server = 'http://example.com'
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins')
+        self.Jenkins = self.Jenkins_patcher.start()
+        self.Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
+
+        self.sys_patcher = mock.patch('jbutler.lib.jobs.sys')
+        self.sys = self.sys_patcher.start()
+        self.sys.stdout = mock.MagicMock(spec=sys.stdout)
+
+        self.open_patcher = mock.patch('__builtin__.open')
+        self.open = self.open_patcher.start()
+
+    def tearDown(self):
+        self.Jenkins_patcher.stop()
+
+    def test_update_job(self):
+        self.Jenkins.has_job.side_effect = (True,)
+        self.open.return_value.__enter__.return_value.read.return_value = \
+            'A foo job'
+
+        jobs.updateJobs(self.cfg, ['jobs/foo.xml'])
+        self.assertEqual(
+            self.Jenkins.return_value.has_job.call_args_list,
+            [mock.call('foo')],
+            )
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config='A foo job')]
+            )
+        self.assertEqual(
+            self.open.call_args_list,
+            [mock.call('jobs/foo.xml')],
+            )
+        self.assertEqual(
+            self.sys.stdout.write.call_args_list,
+            [],
+            )
+
+    def test_update_job_multiple(self):
+        self.Jenkins.return_value.has_job.side_effect = (True, True)
+        self.open.return_value.__enter__.return_value.read.side_effect = (
+            'A foo job',
+            'A bar job',
+            )
+
+        jobs.updateJobs(self.cfg, ['jobs/foo.xml', 'jobs/bar.xml'])
+        self.assertEqual(
+            self.Jenkins.return_value.has_job.call_args_list,
+            [mock.call('foo'), mock.call('bar')],
+            )
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config='A foo job'),
+             mock.call(jobname='bar', config='A bar job'),
+             ]
+            )
+        self.assertEqual(
+            self.open.call_args_list,
+            [mock.call('jobs/foo.xml'), mock.call('jobs/bar.xml')],
+            )
+        self.assertEqual(
+            self.sys.stdout.write.call_args_list,
+            [],
+            )
+
+    def test_update_job_missing_job(self):
+        self.Jenkins.return_value.has_job.side_effect = (True, False)
+        self.open.return_value.__enter__.return_value.read.side_effect = (
+            'A foo job',
+            'A bar job',
+            )
+
+        jobs.updateJobs(self.cfg, ['jobs/foo.xml', 'jobs/bar.xml'])
+        self.assertEqual(
+            self.Jenkins.return_value.has_job.call_args_list,
+            [mock.call('foo'), mock.call('bar')],
+            )
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config='A foo job'),
+             ]
+            )
+        self.assertEqual(
+            self.open.call_args_list,
+            [mock.call('jobs/foo.xml')],
+            )
+        self.assertEqual(
+            self.sys.stdout.write.call_args_list,
+            [mock.call("warning: job does not exist on server: 'bar'\n")],
+            )
+
+    def test_update_job_missing_job_config(self):
+        self.Jenkins.return_value.has_job.side_effect = (True, True)
+        self.open.return_value.__enter__.return_value.read.side_effect = (
+            'A foo job',
+            IOError,
+            )
+
+        self.assertRaises(
+            IOError,
+            jobs.updateJobs,
+            self.cfg,
+            ['jobs/foo.xml', 'jobs/bar.xml'],
+            )
+        self.assertEqual(
+            self.Jenkins.return_value.has_job.call_args_list,
+            [mock.call('foo'), mock.call('bar')],
+            )
+        self.assertEqual(
+            self.Jenkins.return_value.update_job.call_args_list,
+            [mock.call(jobname='foo', config='A foo job'),
+             ]
+            )
+        self.assertEqual(
+            self.open.call_args_list,
+            [mock.call('jobs/foo.xml'), mock.call('jobs/bar.xml')],
+            )
+        self.assertEqual(
+            self.sys.stdout.write.call_args_list,
+            [],
+            )

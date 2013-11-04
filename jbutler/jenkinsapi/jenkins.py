@@ -4,6 +4,7 @@
 
 
 from jenkinsapi.jenkins import Jenkins as _Jenkins
+from jenkinsapi.exceptions import UnknownJob, JenkinsAPIException
 
 from .view import View
 from .views import Views
@@ -25,6 +26,26 @@ class Jenkins(_Jenkins):
         #for nested view
         str_view_name = str_view_url.split('/view/')[-1].replace('/', '')
         return View(str_view_url, str_view_name, jenkins_obj=self)
+
+    def update_job(self, jobname, config):
+        """
+        Update a job
+        :param jobname: name of job, str
+        :param config: new configuration of job, xml
+        :return: updated Job obj
+        """
+        if self.has_job(jobname):
+            if isinstance(config, unicode):
+                config = str(config)
+            self.requester.post_xml_and_confirm_status(
+                '%s/job/%s/config.xml' % (self.baseurl, jobname), data=config)
+            self.poll()
+            if (not self.has_job(jobname)
+                    and self.jobs[jobname].get_config() != config):
+                raise JenkinsAPIException('Cannot update job %s' % jobname)
+        else:
+            raise UnknownJob(jobname)
+        return self[jobname]
 
     @property
     def views(self):

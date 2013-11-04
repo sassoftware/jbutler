@@ -170,6 +170,31 @@ def deleteJobs(cfg, jobList, force=False):
     return deleted_jobs
 
 
+def updateJobs(cfg, jobList):
+    '''
+    Update an existing jenkins job to match the local config
+
+    @param cfg: A config object
+    @type cfg: ButlerConfig
+    @param jobList: list of jenkins jobs to update
+    @type jobList: list
+    '''
+    server = jenkins_utils.server_factory(cfg)
+
+    updated_jobs = []
+    for jobFile in jobList:
+        jobName, _ = os.path.splitext(os.path.basename(jobFile))
+
+        if server.has_job(jobName):
+            with open(jobFile) as fh:
+                job = server.update_job(jobname=jobName, config=fh.read())
+            updated_jobs.append(job)
+        else:
+            sys.stdout.write(
+                "warning: job does not exist on server: '%s'\n" % jobName)
+    return updated_jobs
+
+
 def _get_job_generator(server, jobList=None):
     """
     Create a generator to fetch jobs from a jenkins server
