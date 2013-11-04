@@ -3,15 +3,15 @@
 #
 
 
-import logging
 import os
+import sys
 
 from jbutler import butlercfg, errors
-from jbutler.lib import jobs
 from jbutler.jenkinsapi import jenkins
+from jbutler.lib import jobs
 import mock
 
-from jbutler_test import jbutlerhelp
+from .. import jbutlerhelp
 
 
 class DeleteJobsTests(jbutlerhelp.JButlerHelper):
@@ -36,13 +36,13 @@ class DeleteJobsTests(jbutlerhelp.JButlerHelper):
         self.Jenkins = self.Jenkins_patcher.start()
         self.Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
 
-        self.log_patcher = mock.patch('jbutler.lib.jobs.log')
-        self.log = self.log_patcher.start()
-        self.log.return_value = mock.MagicMock(spec=logging.Logger)
+        self.sys_patcher = mock.patch('jbutler.lib.jobs.sys')
+        self.sys = self.sys_patcher.start()
+        self.sys.stdout = mock.MagicMock(spec=sys.stdout)
 
     def tearDown(self):
         self.Jenkins_patcher.stop()
-        self.log_patcher.stop()
+        self.sys_patcher.stop()
         jbutlerhelp.JButlerHelper.tearDown(self)
 
     def test_delete_jobs(self):
@@ -109,8 +109,8 @@ class DeleteJobsTests(jbutlerhelp.JButlerHelper):
             [mock.call('foo'), mock.call('bar')],
             )
         self.Jenkins.return_value.delete_job.assert_called_once_with('foo')
-        self.log.warning.assert_called_once_with(
-            "Job does not exist on server: 'bar'")
+        self.sys.stdout.write.assert_called_once_with(
+            "warning: job does not exist on server: 'bar'\n")
 
     def test_delete_jobs_missing_job_config(self):
         bar_filename = os.path.join(self.workDir, 'jobs', 'bar.xml')

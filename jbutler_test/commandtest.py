@@ -15,6 +15,7 @@ from jbutler_test import jbutlerhelp
 FOO_JOB = """\
 <?xml version='1.0' encoding='UTF-8'?>
 <project>
+    <disabled>false</disabled>
     <foo>Contents of Foo job.</foo>
 </project>
 """
@@ -22,6 +23,7 @@ FOO_JOB = """\
 BAR_JOB = """\
 <?xml version='1.0' encoding='UTF-8'?>
 <project>
+    <disabled>false</disabled>
     <bar>Contents of Bar Job.</bar>
 </project>
 """
@@ -29,6 +31,7 @@ BAR_JOB = """\
 BAZ_JOB = """\
 <?xml version='1.0' encoding='UTF-8'?>
 <project>
+    <disabled>false</disabled>
     <baz>Contents of Baz Job.</baz>
 </project>
 """
@@ -58,17 +61,6 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         jbutlerhelp.JButlerCommandTest.tearDown(self)
 
         self.Jenkins_patcher.stop()
-
-    def test_no_jobs_dir(self):
-        out = self.runCommand('jobs create', exitCode=1)
-        self.assertEqual(out, 'error: no jobs directory found in %s\n' %
-                         self.workDir)
-
-    def test_empty_jobs_dir(self):
-        self.mkdirs('jobs')
-
-        out = self.runCommand('jobs create', exitCode=0)
-        self.assertEqual(out, '')
 
     def test_successful_config_show(self):
         self.mkfile('jbutlerrc', contents=JBUTLER_RC)
@@ -116,6 +108,11 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         self.assertEqual(out, expectedOut)
 
+    def test_create_no_jobs(self):
+        out = self.runCommand('jobs create', exitCode=1)
+        self.assertEqual(
+            out, "error: 'create' missing 1 command parameter(s): file\n")
+
     def test_successful_job_creation(self):
         self.mkdirs('jobs')
         self.mkfile('jobs/foo.xml', contents=FOO_JOB)
@@ -128,8 +125,8 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.Jenkins.return_value.has_job.return_value = False
         self.Jenkins.return_value.create_job.return_value = mockJob
 
-        out = self.runCommand('jobs create', exitCode=0)
-        self.assertEqual("", out)
+        out = self.runCommand('jobs create jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
 
         # verify JenkinsAPI asked to create job
         self.Jenkins.return_value.create_job.assert_called_once_with(
@@ -149,7 +146,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.Jenkins.return_value.create_job.return_value = mockJob
 
         out = self.runCommand('jobs create jobs/foo.xml', exitCode=0)
-        self.assertEqual("", out)
+        self.assertEqual(out, '')
 
         # verify JenkinsAPI asked to create job
         self.Jenkins.return_value.create_job.assert_called_once_with(
@@ -195,7 +192,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         # verify jbutler asks JenkinsAPI for jobs
         self.Jenkins.return_value.get_job.assert_called_once_with('foo')
 
-        self.assertEqual("", out)
+        self.assertEqual(out, '')
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
 
@@ -212,7 +209,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.Jenkins.return_value.get_job.return_value = mockJob
 
         out = self.runCommand('jobs retrieve foo', exitCode=0)
-        self.assertEqual("", out)
+        self.assertEqual(out, '')
 
         # verify jbutler asks JenkinsAPI for job foo
         self.Jenkins.return_value.has_job.assert_called_once_with('foo')
@@ -234,9 +231,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.Jenkins.return_value.get_job.return_value = mockJob
 
         out = self.runCommand('jobs retrieve foo bar', exitCode=0)
-        self.assertEqual(
-            "Server does not have job 'bar'\n",
-            out)
+        self.assertEqual(out, "warning: server does not have job 'bar'\n")
 
         # verify jbutler asks JenkinsAPI for both jobs
         self.Jenkins.return_value.has_job.call_list = ['foo', 'bar']
@@ -269,7 +264,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # verify jbutler asks JenkinsAPI for jobs
         self.Jenkins.return_value.get_job.assert_called_once_with('foo')
-        self.assertEqual("", out)
+        self.assertEqual(out, '')
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
         self.assertFalse(os.path.exists(self.workDir + '/jobs/bar.xml'))
@@ -294,7 +289,7 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
         self.Jenkins.return_value.get_job.side_effect = [mockJobFoo]
 
         out = self.runCommand('jobs retrieve --filter=f.*', exitCode=0)
-        self.assertEqual("", out)
+        self.assertEqual(out, '')
 
         # verify jbutler asked JenkinsAPI for jobs
         self.Jenkins.return_value.get_job.assert_called_once_with('foo')
@@ -333,9 +328,201 @@ class JobsCommandTest(jbutlerhelp.JButlerCommandTest):
             self.Jenkins.return_value.get_job.call_args_list,
             [mock.call('bar'), mock.call('baz')])
 
-        self.assertEqual("", out)
+        self.assertEqual(out, '')
         self.assertFalse(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertTrue(os.path.exists(self.workDir + '/jobs/bar.xml'))
         self.assertEqual(open(self.workDir + '/jobs/bar.xml').read(), BAR_JOB)
         self.assertTrue(os.path.exists(self.workDir + '/jobs/baz.xml'))
         self.assertEqual(open(self.workDir + '/jobs/baz.xml').read(), BAZ_JOB)
+
+    def test_disable_no_jobs(self):
+        out = self.runCommand('jobs disable', exitCode=1)
+        self.assertEqual(
+            out, "error: 'disable' missing 1 command parameter(s): file\n")
+
+    def test_disable(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        # mock an instance of Jenkins object that return mockJob
+        self.Jenkins.return_value.has_job.return_value = True
+        self.Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs disable jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertTrue(
+            '<disabled>false</disabled>' in
+            open(self.workDir + '/jobs/foo.xml').read()
+            )
+        mockJob.disable.assert_called_once_with()
+
+    def test_disable_force(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        # mock an instance of Jenkins object that return mockJob
+        self.Jenkins.return_value.has_job.return_value = True
+        self.Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs disable --force jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertTrue(
+            '<disabled>true</disabled>' in
+            open(self.workDir + '/jobs/foo.xml').read()
+            )
+        mockJob.disable.assert_called_once_with()
+
+    def test_enable_no_jobs(self):
+        out = self.runCommand('jobs enable', exitCode=1)
+        self.assertEqual(
+            out, "error: 'enable' missing 1 command parameter(s): file\n")
+
+    def test_enable(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+        mockJob.is_enabled.return_value = False
+
+        # mock an instance of Jenkins object that return mockJob
+        self.Jenkins.return_value.has_job.return_value = True
+        self.Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs enable jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertTrue(
+            '<disabled>false</disabled>' in
+            open(self.workDir + '/jobs/foo.xml').read()
+            )
+        mockJob.enable.assert_called_once_with()
+
+    def test_enable_disabled_job(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB.replace('false', 'true'))
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+        mockJob.is_enabled.return_value = False
+
+        # mock an instance of Jenkins object that return mockJob
+        self.Jenkins.return_value.has_job.return_value = True
+        self.Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs enable jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertTrue(
+            '<disabled>true</disabled>' in
+            open(self.workDir + '/jobs/foo.xml').read()
+            )
+        self.assertEqual(mockJob.enable.call_args_list, [])
+
+    def test_enable_force(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB.replace('false', 'true'))
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+        mockJob.is_enabled.return_value = False
+
+        # mock an instance of Jenkins object that return mockJob
+        self.Jenkins.return_value.has_job.return_value = True
+        self.Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs enable --force jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertTrue(
+            '<disabled>false</disabled>' in
+            open(self.workDir + '/jobs/foo.xml').read()
+            )
+        mockJob.enable.assert_called_once_with()
+
+    def test_enable_force_enabled_job(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB.replace('false', 'true'))
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+        mockJob.is_enabled.return_value = True
+
+        # mock an instance of Jenkins object that return mockJob
+        self.Jenkins.return_value.has_job.return_value = True
+        self.Jenkins.return_value.get_job.return_value = mockJob
+
+        out = self.runCommand('jobs enable --force jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertTrue(
+            '<disabled>false</disabled>' in
+            open(self.workDir + '/jobs/foo.xml').read()
+            )
+        self.assertEqual(mockJob.enable.call_args_list, [])
+
+    def test_delete_no_jobs(self):
+        out = self.runCommand('jobs delete', exitCode=1)
+        self.assertEqual(
+            out, "error: 'delete' missing 1 command parameter(s): file\n")
+
+    def test_delete(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        self.Jenkins.return_value.has_job.return_value = True
+
+        out = self.runCommand('jobs delete jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, '')
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertEqual(
+            self.Jenkins.return_value.delete_job.call_args_list,
+            [mock.call('foo')],
+            )
+
+    def test_delete_missing_job(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        self.Jenkins.return_value.has_job.return_value = False
+
+        out = self.runCommand('jobs delete jobs/foo.xml', exitCode=0)
+        self.assertEqual(out, "warning: job does not exist on server: 'foo'\n")
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertEqual(
+            self.Jenkins.return_value.delete_job.call_args_list,
+            [],
+            )
+
+    def test_delete_missing_config(self):
+        self.mkdirs('jobs')
+        self.mkfile('jobs/foo.xml', contents=FOO_JOB)
+
+        # create a job object
+        mockJob = mock.MagicMock(spec=Job)
+        mockJob.name = 'foo'
+
+        self.Jenkins.return_value.has_job.return_value = True
+
+        out = self.runCommand(
+            'jobs delete jobs/foo.xml jobs/bar.xml', exitCode=1)
+        self.assertEqual(
+            out, "error: [Errno 2]: No such file or directory:"
+            " 'jobs/bar.xml'\n")
+        self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
+        self.assertEqual(
+            self.Jenkins.return_value.delete_job.call_args_list,
+            [mock.call('foo')],
+            )

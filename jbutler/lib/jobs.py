@@ -4,9 +4,9 @@
 """
 Library for working with jenkins jobs
 """
-import logging
-import re
 import os
+import re
+import sys
 
 from lxml import etree
 
@@ -17,10 +17,7 @@ from .. import (
 from ..utils import jenkins_utils
 
 
-log = logging.getLogger(__name__)
-
-
-def createJobs(cfg, jobList, jobDir):
+def createJobs(cfg, jobList):
     """
     Create jenkins jobs using the files listed in jobList
 
@@ -30,12 +27,9 @@ def createJobs(cfg, jobList, jobDir):
     @type cfg: list
     @param projectPath: path to directory containing jenkins job config files
     """
-    if not jobList:
-        jobList = [os.path.join(jobDir, path) for path in os.listdir(jobDir)]
-
     server = jenkins_utils.server_factory(cfg)
 
-    jobs = []
+    created_jobs = []
     for jobFile in jobList:
         jobName, _ = os.path.splitext(jobFile)
         jobName = os.path.basename(jobName)
@@ -45,8 +39,8 @@ def createJobs(cfg, jobList, jobDir):
 
         with open(jobFile) as fh:
             j = server.create_job(jobname=jobName, config=fh.read())
-        jobs.append(j)
-    return jobs
+        created_jobs.append(j)
+    return created_jobs
 
 
 def retrieveJobs(cfg, jobList, jobDir, jobFilter=None):
@@ -61,83 +55,87 @@ def retrieveJobs(cfg, jobList, jobDir, jobFilter=None):
     """
     if not os.path.exists(jobDir):
         raise errors.CommandError("no such directory: '%s'" % jobDir)
+    server = jenkins_utils.server_factory(cfg)
 
     if jobFilter is None:
         jobFilter = '.*'
     jobFilter = re.compile(jobFilter)
 
-    jobs = []
-    server = jenkins_utils.server_factory(cfg)
-
-    job_generator = _get_job_generator(server, jobList)
-    for _, jobName in job_generator:
-        if not jobFilter.match(jobName):
-            continue
-        jobObj = server.get_job(jobName)
-        jobXmlObj = etree.fromstring(jobObj.get_config())
-
-        jobFile = os.path.join(jobDir, jobName + '.xml')
-        with open(jobFile, 'w') as fh:
-            fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
-        jobs.append(jobObj)
-    return jobs
-
-
-def disableJobs(cfg, jobList, jobDir, jobFilter=None, force=False):
-    if jobFilter is None:
-        jobFilter = '.*'
-    jobFilter = re.compile(jobFilter)
-
-    server = jenkins_utils.server_factory(cfg)
-
-    jobs = []
+    retrieved_jobs = []
     for _, jobName in _get_job_generator(server, jobList):
-        if not jobFilter.match(jobName):
-            continue
-        jobObj = server.get_job(jobName)
-        jobFile = os.path.join(jobDir, jobObj.name + '.xml')
-        with open(jobFile) as fh:
-            jobXmlObj = etree.parse(fh)
+        if jobFilter.match(jobName):
+            jobObj = server.get_job(jobName)
+            jobXmlObj = etree.fromstring(jobObj.get_config())
 
-        disabled = jobXmlObj.xpath('/project/disabled')[0]
-
-        jobObj.disable()
-
-        if disabled.text == 'false' and force:
-            disabled.text = 'true'
+            jobFile = os.path.join(jobDir, jobName + '.xml')
             with open(jobFile, 'w') as fh:
                 fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
-        jobs.append(jobObj)
-    return jobs
+            retrieved_jobs.append(jobObj)
+    return retrieved_jobs
 
 
-def enableJobs(cfg, jobList, jobDir, jobFilter=None, force=False):
-    if jobFilter is None:
-        jobFilter = '.*'
-    jobFilter = re.compile(jobFilter)
-
+def disableJobs(cfg, jobList, force=False):
     server = jenkins_utils.server_factory(cfg)
 
-    jobs = []
-    for _, jobName in _get_job_generator(server, jobList):
-        if not jobFilter.match(jobName):
-            continue
-        jobObj = server.get_job(jobName)
-        jobFile = os.path.join(jobDir, jobObj.name + '.xml')
-        with open(jobFile) as fh:
-            jobXmlObj = etree.parse(fh)
+    disabled_jobs = []
+    for jobFile in jobList:
+        jobName, _ = os.path.splitext(os.path.basename(jobFile))
 
-        disabled = jobXmlObj.xpath('/project/disabled')[0]
-        if disabled.text == 'true' and not force:
-            continue
-        elif disabled.text == 'true' and force:
-            disabled.text = 'false'
-            with open(jobFile, 'w') as fh:
-                fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
+        if server.has_job(jobName):
+            jobObj = server.get_job(jobName)
+            with open(jobFile) as fh:
+                jobXmlObj = etree.parse(fh)
 
-        jobObj.enable()
-        jobs.append(jobObj)
-    return jobs
+            disabled = jobXmlObj.xpath('/project/disabled')
+            if not disabled:
+                raise errors.CommandError(
+                    "Job config does not have a 'disabled' property")
+            disabled = disabled[0]
+
+            jobObj.disable()
+
+            if disabled.text == 'false' and force:
+                disabled.text = 'true'
+                with open(jobFile, 'w') as fh:
+                    fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
+            disabled_jobs.append(jobObj)
+        else:
+            sys.stdout.write(
+                "warning: no such job on server: '%s'\n" % jobName)
+
+    return disabled_jobs
+
+
+def enableJobs(cfg, jobList, force=False):
+    server = jenkins_utils.server_factory(cfg)
+
+    enabled_jobs = []
+    for jobFile in jobList:
+        jobName, _ = os.path.splitext(os.path.basename(jobFile))
+
+        if server.has_job(jobName):
+            jobObj = server.get_job(jobName)
+            with open(jobFile) as fh:
+                jobXmlObj = etree.parse(fh)
+
+            disabled = jobXmlObj.xpath('/project/disabled')
+            if not disabled:
+                raise errors.CommandError(
+                    "Job config does not have a 'disabled' property")
+            disabled = disabled[0]
+
+            if disabled.text == 'true' and force:
+                disabled.text = 'false'
+                with open(jobFile, 'w') as fh:
+                    fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
+
+            if disabled.text == 'false' and not jobObj.is_enabled():
+                jobObj.enable()
+                enabled_jobs.append(jobObj)
+        else:
+            sys.stdout.write(
+                "warning: no such job on server: '%s'\n" % jobName)
+    return enabled_jobs
 
 
 def deleteJobs(cfg, jobList, force=False):
@@ -167,7 +165,8 @@ def deleteJobs(cfg, jobList, force=False):
             if force:
                 os.remove(jobFile)
         else:
-            log.warning("Job does not exist on server: '%s'" % jobName)
+            sys.stdout.write(
+                "warning: job does not exist on server: '%s'\n" % jobName)
     return deleted_jobs
 
 
@@ -178,7 +177,8 @@ def _get_job_generator(server, jobList=None):
     def _job_generator():
         for jobName in jobList:
             if not server.has_job(jobName):
-                print("Server does not have job '%s'" % jobName)
+                sys.stdout.write(
+                    "warning: server does not have job '%s'\n" % jobName)
                 continue
             yield None, jobName
 
