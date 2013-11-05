@@ -33,57 +33,71 @@ class ViewCommand(command.CommandWithSubCommands):
     commands = ['views']
 
 
-class ViewCreateCommand(command.BaseCommand):
-    help = 'Create a jenkins view from config file'
-    commands = ['create']
-    paramHelp = '[VIEW]*'
+class ViewSubCommand(command.BaseCommand):
+    paramHelp = '[view]*'
     requireConfig = True
 
-    def addParameters(self, argDef):
-        super(ViewCreateCommand, self).addParameters(argDef)
+    def addLocalParameters(self, argDef):
         argDef['project'] = (options.OPT_PARAM, 'Path to project directory,'
                              ' defaults to current working directory')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        _, viewList = self.requireParameters(args, allowExtra=True)
-        if not viewList:
-            viewList = None
-
-        projectDir = argSet.pop('project', os.getcwd())
-        projectDir = os.path.abspath(projectDir)
-        viewFile = os.path.join(projectDir, 'views.yml')
+        _, self.viewList = self.requireParameters(args, allowExtra=True)
+        self.projectDir = argSet.pop('project', os.getcwd())
+        self.projectDir = os.path.abspath(self.projectDir)
+        self.viewConfig = os.path.join(self.projectDir, 'views.yml')
 
         # verify viewsDir exists
-        if not (os.path.exists(viewFile) and os.path.isfile(viewFile)):
+        if not (os.path.exists(self.viewConfig)
+                and os.path.isfile(self.viewConfig)):
             raise errors.CommandError(
-                'no views configuration found at %s' % (projectDir)
+                'no views configuration found at %s' % (self.projectDir)
                 )
 
-        views.createViews(cfg, viewList, viewFile)
 
+class ViewCreateCommand(ViewSubCommand):
+    help = 'Create a jenkins view from config file'
+    commands = ['create']
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        ViewSubCommand.runCommand(self, cfg, argSet, args, **kwargs)
+        views.createViews(cfg, self.viewList, self.viewConfig)
 ViewCommand.registerSubCommand('create', ViewCreateCommand)
 
 
-class ViewRetrieveComand(command.BaseCommand):
-    help = 'Retrieve view, and all sub-views from jenkins server'
-    commands = ['retrieve']
-    paramHelp = '[VIEW]*'
-    requireConfig = True
+class ViewDeleteCommand(ViewSubCommand):
+    help = 'Delete view and all sub-views'
+    command = ['delete']
+    paramHelp = '<view>+'
 
     def addLocalParameters(self, argDef):
-        super(ViewRetrieveComand, self).addLocalParameters(argDef)
-        argDef['project'] = (options.OPT_PARAM, 'Path to project, defaults to'
-                             ' current working directory')
+        ViewSubCommand.addLocalParameters(self, argDef)
+        argDef['force'] = (options.NO_PARAM, 'Also delete view from local'
+                           ' config file')
 
     def runCommand(self, cfg, argSet, args, **kwargs):
-        _, viewList = self.requireParameters(args, allowExtra=True)
-        if not viewList:
-            viewList = None
+        _, self.viewList = self.requireParameters(
+            args, expected='view', appendExtra=True)
+        self.projectDir = argSet.pop('project', os.getcwd())
+        self.projectDir = os.path.abspath(self.projectDir)
+        self.viewConfig = os.path.join(self.projectDir, 'views.yml')
 
-        projectDir = argSet.pop('project', os.getcwd())
-        projectDir = os.path.abspath(projectDir)
-        viewFile = os.path.join(projectDir, 'views.yml')
+        # verify viewsDir exists
+        if not (os.path.exists(self.viewConfig)
+                and os.path.isfile(self.viewConfig)):
+            raise errors.CommandError(
+                'no views configuration found at %s' % (self.projectDir)
+                )
+        force = argSet.pop('force', False)
+        views.deleteViews(cfg, self.viewList, self.viewConfig, force)
+ViewCommand.registerSubCommand('delete', ViewDeleteCommand)
 
-        views.retrieveViews(cfg, viewList, viewFile)
 
+class ViewRetrieveComand(ViewSubCommand):
+    help = 'Retrieve view, and all sub-views from jenkins server'
+    commands = ['retrieve']
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        ViewSubCommand.runCommand(self, cfg, argSet, args, **kwargs)
+        views.retrieveViews(cfg, self.viewList, self.viewConfig)
 ViewCommand.registerSubCommand('retrieve', ViewRetrieveComand)

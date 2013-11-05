@@ -7,6 +7,8 @@ LXML_KWARGS = {
     'pretty_print': True,
     }
 
+VIEW_SEP = '/'
+
 YAML_KWARGS = {
     'default_flow_style': False,
     }

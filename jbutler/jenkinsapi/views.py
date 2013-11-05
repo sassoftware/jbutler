@@ -9,6 +9,7 @@ import urllib
 from jenkinsapi.views import Views as _Views
 import yaml
 
+from .. import VIEW_SEP, YAML_KWARGS
 from .view import View
 
 
@@ -22,6 +23,10 @@ log = logging.getLogger(__name__)
 
 
 class Views(_Views):
+
+    def __contains__(self, view_path):
+        return (self.get_view_by_path(view_path) is not None)
+
     def __getitem__(self, view_name):
         for row in self.jenkins._data.get('views', []):
             if row['name'] == view_name:
@@ -111,6 +116,26 @@ class Views(_Views):
     def createViews(self, data, viewList=None, serialization='yaml'):
         deserializer = getattr(self, '_from_%s' % serialization)
         return deserializer(data, viewList)
+
+    def delete(self, view_path):
+        view = self.get_view_by_path(view_path)
+        self.delete_view_by_url(view.baseurl)
+
+    def delete_view_by_url(self, str_url):
+        url = "%s/doDelete" % str_url
+        self.jenkins.requester.post_and_confirm_status(url, data='')
+        self.jenkins.poll()
+        return self
+
+    def get_view_by_path(self, view_path):
+        root_view, _, subpath = view_path.partition(VIEW_SEP)
+        try:
+            if subpath:
+                return self[root_view].views.get_view_by_path(subpath)
+            else:
+                return self[root_view]
+        except (AttributeError, KeyError):
+            return None
 
     def serialize(self, viewList=None, serialization='yaml'):
         viewObjs = []

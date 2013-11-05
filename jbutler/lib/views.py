@@ -18,6 +18,8 @@
 """
 Library for working with jenkins views
 """
+import sys
+
 from ..utils import jenkins_utils
 
 
@@ -36,6 +38,35 @@ def createViews(cfg, viewList, viewFile):
     with open(viewFile) as fh:
         views = server.views.createViews(fh.read(), viewList)
     return views
+
+
+def deleteViews(cfg, viewList, viewFile, force=False):
+    """
+    Delete views
+
+    @param cfg: A config object
+    @type cfg: ButlerConfig
+    @param viewList: list of view names to create
+    @type viewList: list
+    @param viewFile: path to file containing view configuration
+    @type viewFile: string
+    """
+    server = jenkins_utils.server_factory(cfg)
+
+    deleted_views = []
+    views = None
+    for viewName in viewList:
+        if server.has_view(viewName):
+            views = server.delete_view(viewName)
+            deleted_views.append(viewName)
+        else:
+            sys.stdout.write(
+                "warning: no such view found on server: '%s'\n" % viewName)
+
+    if force and views:
+        with open(viewFile, 'w') as fh:
+            fh.write(views.serialize())
+    return deleted_views
 
 
 def retrieveViews(cfg, viewList, viewFile):

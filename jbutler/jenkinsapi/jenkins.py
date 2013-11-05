@@ -19,6 +19,9 @@ class Jenkins(_Jenkins):
             requester=self.requester,
             )
 
+    def delete_view(self, view_name):
+        return self.views.delete(view_name)
+
     def get_jenkins_obj_from_url(self, url):
         return Jenkins(url, self.username, self.password, self.requester)
 
@@ -26,6 +29,9 @@ class Jenkins(_Jenkins):
         #for nested view
         str_view_name = str_view_url.split('/view/')[-1].replace('/', '')
         return View(str_view_url, str_view_name, jenkins_obj=self)
+
+    def has_view(self, view_path):
+        return (view_path in self.views)
 
     def update_job(self, jobname, config):
         """

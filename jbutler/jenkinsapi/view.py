@@ -6,6 +6,8 @@
 from jenkinsapi.view import View as _View
 from lxml import etree
 
+from .. import VIEW_SEP
+
 
 class View(_View):
     def __init__(self, url, name, jenkins_obj):
