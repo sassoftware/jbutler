@@ -18,11 +18,13 @@
 views command
 """
 import os
+import sys
 
 from conary.lib import options
 
 from .. import errors
-from ..lib import command, views
+from ..lib import command
+from ..utils import jenkins_utils
 
 
 class ViewCommand(command.CommandWithSubCommands):
@@ -61,7 +63,10 @@ class ViewCreateCommand(ViewSubCommand):
 
     def runCommand(self, cfg, argSet, args, **kwargs):
         ViewSubCommand.runCommand(self, cfg, argSet, args, **kwargs)
-        views.createViews(cfg, self.viewList, self.viewConfig)
+
+        server = jenkins_utils.server_factory(cfg)
+        with open(self.viewConfig) as fh:
+            server.views.deserialize(fh.read(), self.viewList)
 ViewCommand.registerSubCommand('create', ViewCreateCommand)
 
 
@@ -89,7 +94,20 @@ class ViewDeleteCommand(ViewSubCommand):
                 'no views configuration found at %s' % (self.projectDir)
                 )
         force = argSet.pop('force', False)
-        views.deleteViews(cfg, self.viewList, self.viewConfig, force)
+
+        server = jenkins_utils.server_factory(cfg)
+
+        created_views = None
+        for viewName in self.viewList:
+            if server.has_view(viewName):
+                created_views = server.delete_view(viewName)
+            else:
+                sys.stdout.write(
+                    "warning: no such view found on server: '%s'\n" % viewName)
+
+        if force and created_views:
+            with open(self.viewConfig, 'w') as fh:
+                fh.write(created_views.serialize())
 ViewCommand.registerSubCommand('delete', ViewDeleteCommand)
 
 
@@ -99,5 +117,9 @@ class ViewRetrieveComand(ViewSubCommand):
 
     def runCommand(self, cfg, argSet, args, **kwargs):
         ViewSubCommand.runCommand(self, cfg, argSet, args, **kwargs)
-        views.retrieveViews(cfg, self.viewList, self.viewConfig)
+
+        server = jenkins_utils.server_factory(cfg)
+        retrieved_views = server.views.serialize(self.viewList)
+        with open(self.viewConfig, 'w') as fh:
+            fh.write(retrieved_views)
 ViewCommand.registerSubCommand('retrieve', ViewRetrieveComand)

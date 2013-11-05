@@ -10,6 +10,9 @@ from .. import VIEW_SEP
 
 
 class View(_View):
+    '''
+    Wrapper around jenkinsapi View object
+    '''
     def __init__(self, url, name, jenkins_obj):
         _View.__init__(self, url, name, jenkins_obj)
         self._get_form_content()
@@ -56,17 +59,22 @@ class View(_View):
         if self.includeRegex:
             self.includeRegex = self.includeRegex[0].attrib.get('value', '')
 
-    def toDict(self):
+    def toDict(self, root_path=None):
+        if root_path is None:
+            root_path = ''
+
+        path = VIEW_SEP.join([root_path, self.name])
         data = dict(
             name=self.name,
             description=self.description or '',
             filterQueue=self.filterQueue,
             filterExecutors=self.filterExecutors,
+            path=path,
             )
 
         if hasattr(self, 'defaultView'):
             data['defaultView'] = self.defaultView
-            data['views'] = [v.toDict() for _, v in self.views.iteritems()]
+            data['views'] = [v.toDict(path) for _, v in self.views.iteritems()]
         else:
             data.update(
                 statusFilter=self.statusFilter,

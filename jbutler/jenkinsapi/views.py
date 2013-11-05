@@ -23,7 +23,9 @@ log = logging.getLogger(__name__)
 
 
 class Views(_Views):
-
+    '''
+    Wrapper around jenkinsapi Views object
+    '''
     def __contains__(self, view_path):
         return (self.get_view_by_path(view_path) is not None)
 
@@ -37,28 +39,41 @@ class Views(_Views):
         else:
             return None
 
-    def _from_yaml(self, data, viewList=None):
-        return [self.createView(viewObj) for viewObj in yaml.safe_load(data)
-                if not viewList or viewObj['name'] in viewList]
+    def _from_yaml(self, data):
+        return yaml.safe_load(data)
 
-    def _to_yaml(self, viewObjs):
-        return yaml.safe_dump(viewObjs, default_flow_style=False)
+    def _to_yaml(self, view_objs):
+        return yaml.safe_dump(view_objs, **YAML_KWARGS)
 
-    def createView(self, viewObj):
+    def _createView(self, view_obj, parent_view, view_list=None):
         """
         Create a view and all sub-views from a viewObj
         """
-        viewName = viewObj['name']
-        viewType = NESTED_VIEW if 'views' in viewObj else LIST_VIEW
-        view = self.create(viewName, viewType)
+        if parent_view is None:
+            raise Exception(
+                "trying to create child view of non-existant parent: '%s'" %
+                view_obj['path'])
 
-        if viewType == LIST_VIEW:
-            view = self._configureListView(view, viewObj)
-            return [view]
+        if not view_list or view_obj['path'] in view_list:
+            view = self._create_view_helper(view_obj, parent_view)
+            created_views = [view]
+        else:
+            view = self.get_view_by_path(view_obj['path'])
+            created_views = []
 
-        if viewType == NESTED_VIEW and viewObj['views']:
-            return [view] + [view.views.createView(v)
-                             for v in viewObj['views']]
+        for subview in view_obj.get('views', []):
+            created_views.extend(
+                self._createView(subview, view.views, view_list))
+        return created_views
+
+    def _create_view_helper(self, view_obj, parent_view):
+        view_name = view_obj['name']
+        view_type = NESTED_VIEW if 'views' in view_obj else LIST_VIEW
+        view = parent_view.create(view_name, view_type)
+
+        if view_type == LIST_VIEW:
+            view = self._configureListView(view, view_obj)
+        return view
 
     def _configureListView(self, view, viewConfig):
         log.info('Configuring "%s" view' % (view.name,))
@@ -113,9 +128,13 @@ class Views(_Views):
         self.jenkins.poll()
         return self[view.name]
 
-    def createViews(self, data, viewList=None, serialization='yaml'):
+    def deserialize(self, data, view_list=None, serialization='yaml'):
         deserializer = getattr(self, '_from_%s' % serialization)
-        return deserializer(data, viewList)
+
+        created_views = []
+        for view_obj in deserializer(data):
+            created_views.extend(self._createView(view_obj, self, view_list))
+        return created_views
 
     def delete(self, view_path):
         view = self.get_view_by_path(view_path)
@@ -128,16 +147,16 @@ class Views(_Views):
         return self
 
     def get_view_by_path(self, view_path):
-        root_view, _, subpath = view_path.partition(VIEW_SEP)
+        root_path, _, view_name = view_path.rpartition(VIEW_SEP)
         try:
-            if subpath:
-                return self[root_view].views.get_view_by_path(subpath)
+            if root_path:
+                return self.get_view_by_path(root_path).views[view_name]
             else:
-                return self[root_view]
+                return self[view_name]
         except (AttributeError, KeyError):
             return None
 
-    def serialize(self, viewList=None, serialization='yaml'):
+    def serialize(self, viewList=None, serialization='yaml', root_path=None):
         viewObjs = []
         for viewName, view in self.iteritems():
             if 'nodeDescription' in view._data:
@@ -146,7 +165,7 @@ class Views(_Views):
             if viewList and viewName not in viewList:
                 continue
 
-            viewObj = view.toDict()
+            viewObj = view.toDict(root_path)
             viewObjs.append(viewObj)
 
         serializer = getattr(self, '_to_%s' % serialization)
