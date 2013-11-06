@@ -123,3 +123,15 @@ class ViewRetrieveComand(ViewSubCommand):
         with open(self.viewConfig, 'w') as fh:
             fh.write(retrieved_views)
 ViewCommand.registerSubCommand('retrieve', ViewRetrieveComand)
+
+
+class ViewUpdateCommand(ViewSubCommand):
+    help = 'Update existing view with new configuration'
+    commands = ['update']
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        ViewSubCommand.runCommand(self, cfg, argSet, args, **kwargs)
+        server = jenkins_utils.server_factory(cfg)
+        with open(self.viewConfig) as fh:
+            server.views.deserialize(fh.read(), self.viewList, update=True)
+ViewCommand.registerSubCommand('update', ViewUpdateCommand)

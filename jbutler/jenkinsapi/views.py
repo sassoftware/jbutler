@@ -45,7 +45,7 @@ class Views(_Views):
     def _to_yaml(self, view_objs):
         return yaml.safe_dump(view_objs, **YAML_KWARGS)
 
-    def _createView(self, view_obj, parent_view, view_list=None):
+    def _createView(self, view_obj, parent_view, view_list=None, force=False):
         """
         Create a view and all sub-views from a viewObj
         """
@@ -55,7 +55,7 @@ class Views(_Views):
                 view_obj['path'])
 
         if not view_list or view_obj['path'] in view_list:
-            view = self._create_view_helper(view_obj, parent_view)
+            view = self._create_view_helper(view_obj, parent_view, force)
             created_views = [view]
         else:
             view = self.get_view_by_path(view_obj['path'])
@@ -66,13 +66,17 @@ class Views(_Views):
                 self._createView(subview, view.views, view_list))
         return created_views
 
-    def _create_view_helper(self, view_obj, parent_view):
+    def _create_view_helper(self, view_obj, parent_view, force=False):
         view_name = view_obj['name']
         view_type = NESTED_VIEW if 'views' in view_obj else LIST_VIEW
-        view = parent_view.create(view_name, view_type)
 
-        if view_type == LIST_VIEW:
-            view = self._configureListView(view, view_obj)
+        if view_name not in parent_view or force:
+            view = parent_view.create(view_name, view_type)
+
+            if view_type == LIST_VIEW:
+                view = self._configureListView(view, view_obj)
+        else:
+            view = parent_view[view_name]
         return view
 
     def _configureListView(self, view, viewConfig):
@@ -128,12 +132,14 @@ class Views(_Views):
         self.jenkins.poll()
         return self[view.name]
 
-    def deserialize(self, data, view_list=None, serialization='yaml'):
+    def deserialize(self, data, view_list=None, serialization='yaml',
+                    update=False):
         deserializer = getattr(self, '_from_%s' % serialization)
 
         created_views = []
         for view_obj in deserializer(data):
-            created_views.extend(self._createView(view_obj, self, view_list))
+            created_views.extend(
+                self._createView(view_obj, self, view_list, update))
         return created_views
 
     def delete(self, view_path):
