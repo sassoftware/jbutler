@@ -1,12 +1,6 @@
 #
 # Copyright(c) 2013 SAS Institute, Inc.
 #
-LXML_KWARGS = {
-    'xml_declaration': True,
-    'encoding': 'UTF-8',
-    'pretty_print': True,
-    }
-
 VIEW_SEP = '/'
 
 YAML_KWARGS = {

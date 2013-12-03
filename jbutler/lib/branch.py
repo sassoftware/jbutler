@@ -7,14 +7,13 @@ import copy
 import os
 
 from conary.build import macros as conarymacros
-from lxml import etree
 import yaml
 
 from .. import (
-    LXML_KWARGS,
     YAML_KWARGS,
     errors,
     )
+from ..utils import lxml_utils
 
 
 def branchJobs(macroList, templateList, jobDir, updateTemplate=False):
@@ -28,7 +27,7 @@ def branchJobs(macroList, templateList, jobDir, updateTemplate=False):
         # access the current job file
         curFile = os.path.join(jobDir, template.get('name') % curMacros)
         with open(curFile) as fh:
-            jobData = etree.parse(fh)
+            jobData = lxml_utils.parse(fh)
 
         # create a new set of macros from macroList
         newMacros = curMacros.copy()
@@ -45,7 +44,7 @@ def branchJobs(macroList, templateList, jobDir, updateTemplate=False):
 
         # write new job data to newFile
         with open(os.path.join(jobDir, newFile), 'w') as fh:
-            fh.write(etree.tostring(newJobData, **LXML_KWARGS))
+            fh.write(lxml_utils.tostring(newJobData))
 
         if updateTemplate:
             template['macros'] = [
