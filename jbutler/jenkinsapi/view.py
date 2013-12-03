@@ -4,9 +4,9 @@
 
 
 from jenkinsapi.view import View as _View
-from lxml import etree
 
 from .. import VIEW_SEP
+from ..utils import lxml_utils
 
 
 class View(_View):
@@ -20,7 +20,7 @@ class View(_View):
     def _get_form_content(self):
         response = self.jenkins_obj.requester.get_and_confirm_status(
             self.baseurl + '/configure')
-        doc = etree.fromstring(response.text, etree.XMLParser(recover=True))
+        doc = lxml_utils.fromstring(response.text)
 
         self.description = doc.xpath('//textarea') or ''
         if self.description:

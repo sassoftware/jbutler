@@ -8,13 +8,11 @@ import os
 import re
 import sys
 
-from lxml import etree
-
-from .. import (
-    LXML_KWARGS,
-    errors,
+from .. import errors
+from ..utils import (
+    lxml_utils,
+    jenkins_utils,
     )
-from ..utils import jenkins_utils
 
 
 def createJobs(cfg, jobList):
@@ -65,11 +63,11 @@ def retrieveJobs(cfg, jobList, jobDir, jobFilter=None):
     for _, jobName in _get_job_generator(server, jobList):
         if jobFilter.match(jobName):
             jobObj = server.get_job(jobName)
-            jobXmlObj = etree.fromstring(jobObj.get_config())
+            jobXmlObj = lxml_utils.fromstring(jobObj.get_config())
 
             jobFile = os.path.join(jobDir, jobName + '.xml')
             with open(jobFile, 'w') as fh:
-                fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
+                fh.write(lxml_utils.tostring(jobXmlObj))
             retrieved_jobs.append(jobObj)
     return retrieved_jobs
 
@@ -84,7 +82,7 @@ def disableJobs(cfg, jobList, force=False):
         if server.has_job(jobName):
             jobObj = server.get_job(jobName)
             with open(jobFile) as fh:
-                jobXmlObj = etree.parse(fh)
+                jobXmlObj = lxml_utils.parse(fh)
 
             disabled = jobXmlObj.xpath('/project/disabled')
             if not disabled:
@@ -97,7 +95,7 @@ def disableJobs(cfg, jobList, force=False):
             if disabled.text == 'false' and force:
                 disabled.text = 'true'
                 with open(jobFile, 'w') as fh:
-                    fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
+                    fh.write(lxml_utils.tostring(jobXmlObj))
             disabled_jobs.append(jobObj)
         else:
             sys.stdout.write(
@@ -116,7 +114,7 @@ def enableJobs(cfg, jobList, force=False):
         if server.has_job(jobName):
             jobObj = server.get_job(jobName)
             with open(jobFile) as fh:
-                jobXmlObj = etree.parse(fh)
+                jobXmlObj = lxml_utils.parse(fh)
 
             disabled = jobXmlObj.xpath('/project/disabled')
             if not disabled:
@@ -127,7 +125,7 @@ def enableJobs(cfg, jobList, force=False):
             if disabled.text == 'true' and force:
                 disabled.text = 'false'
                 with open(jobFile, 'w') as fh:
-                    fh.write(etree.tostring(jobXmlObj, **LXML_KWARGS))
+                    fh.write(lxml_utils.tostring(jobXmlObj))
 
             if disabled.text == 'false' and not jobObj.is_enabled():
                 jobObj.enable()
