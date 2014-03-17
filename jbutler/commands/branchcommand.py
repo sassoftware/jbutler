@@ -5,6 +5,7 @@
 
 import copy
 import os
+import warnings
 
 from conary.lib import options
 
@@ -43,15 +44,11 @@ class BranchCommand(command.BaseCommand):
 
         _, templateList = self.requireParameters(args, allowExtra=True)
 
-        if not fromMacros:
-            raise errors.CommandError(
-                "must specify at least one 'from' macro")
-
         if not toMacros:
             raise errors.CommandError(
                 "must specify at least one 'to' macro")
 
-        self.fromMacros = utils.parseMacros(fromMacros)
+        self.fromMacros = utils.parseMacros(fromMacros) if fromMacros else None
         self.toMacros = utils.parseMacros(toMacros)
 
         self.projectDir = os.path.abspath(projectDir)
@@ -62,13 +59,13 @@ class BranchCommand(command.BaseCommand):
             raise errors.CommandError(
                 'no jobs directory found in %s' % projectDir)
 
+        templateDir = os.path.join(projectDir, cfg.templateDir)
+        # verify templateDir exists
+        if not (os.path.exists(templateDir) and
+                os.path.isdir(templateDir)):
+            raise errors.CommandError(
+                'no templates directory found in %s' % projectDir)
         if not templateList:
-            templateDir = os.path.join(projectDir, cfg.templateDir)
-            # verify templateDir exists
-            if not (os.path.exists(templateDir) and
-                    os.path.isdir(templateDir)):
-                raise errors.CommandError(
-                    'no templates directory found in %s' % projectDir)
             templateList = [os.path.join(templateDir, f)
                             for f in os.listdir(templateDir)
                             if f.endswith('.yaml') or f.endswith('.yml')]
@@ -78,6 +75,17 @@ class BranchCommand(command.BaseCommand):
     def branchJobs(self, templateList):
         for templateFile in templateList:
             template = utils.readTemplate(templateFile)
+
+            if 'macros' in template:
+                warnings.warn(
+                    'Support for macros stored in templates is deprecated.',
+                    DeprecationWarning,
+                    )
+                self.fromMacros = utils.parseMacros(
+                    '='.join(macro) for macro in template.get('macros'))
+            elif not self.fromMacros:
+                raise errors.CommandError(
+                    "must specify at least one 'from' macro")
 
             oldFile = os.path.join(
                 self.jobDir, template.get('name') % self.fromMacros)
@@ -97,3 +105,12 @@ class BranchCommand(command.BaseCommand):
 
             # write new job data to new file
             utils.writeJob(newFile, newJobData)
+
+            if 'macros' in template:
+                # backwards compat for storing macros in templates
+                new_template = copy.copy(template)
+                for idx, macro in enumerate(new_template.get('macros')):
+                    name, value = macro
+                    if name in self.toMacros:
+                        new_template['macros'][idx][1] = self.toMacros[name]
+                utils.writeTemplate(templateFile, new_template)
