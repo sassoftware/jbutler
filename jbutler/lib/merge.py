@@ -4,7 +4,6 @@
 import copy
 import difflib
 import os
-import re
 import sys
 
 from conary.build import macros as conarymacros
@@ -12,12 +11,7 @@ from lxml import objectify
 import yaml
 
 from .. import errors
-
-
-YES = ('y', 'Y', '')
-NO = ('n', 'N')
-QUIT = ('q', 'Q')
-MACRO_RE = re.compile(r'%\(\w+\)s')
+from ..constants import YES, NO, QUIT, MACRO_RE
 
 
 def mergeJobs(templateList, jobDir):

@@ -18,12 +18,13 @@ from conary.lib import log
 from conary.lib import mainhandler
 
 from . import command
-from .. import butlercfg, errors
+from .. import butlercfg, constants, errors
 from ..commands import commandList as _commandList
 
 
 class ButlerMain(mainhandler.MainHandler):
     name = 'jbutler'
+    version = constants.VERSION
 
     abstractCommand = command.BaseCommand
     configClass = butlercfg.ButlerConfiguration

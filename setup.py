@@ -2,12 +2,11 @@
 #
 from setuptools import setup, find_packages
 
-
-VERSION = (0, 0, 1)
+from jbutler.constants import VERSION
 
 setup(
     name='jbutler',
-    version='{0}.{1}.{2}'.format(*VERSION),
+    version=VERSION,
     description='Manage a Jenkins instance',
     author='Walter Scheper',
     author_email='walter.scheper@sas.com',

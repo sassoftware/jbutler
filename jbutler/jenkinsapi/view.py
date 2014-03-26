@@ -5,7 +5,7 @@
 
 from jenkinsapi.view import View as _View
 
-from .. import VIEW_SEP
+from ..constants import VIEW_SEP
 from ..utils import lxml_utils
 
 

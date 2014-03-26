@@ -9,7 +9,7 @@ import urllib
 from jenkinsapi.views import Views as _Views
 import yaml
 
-from .. import VIEW_SEP, YAML_KWARGS
+from ..constants import VIEW_SEP, YAML_KWARGS
 from .view import View
 
 

@@ -9,10 +9,8 @@ import os
 from conary.build import macros as conarymacros
 import yaml
 
-from .. import (
-    YAML_KWARGS,
-    errors,
-    )
+from .. import errors
+from ..constants import YAML_KWARGS
 from ..utils import lxml_utils
 
 
