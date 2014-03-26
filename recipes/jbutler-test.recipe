@@ -31,5 +31,5 @@ class JbutlerTest(TestPackageRecipe):
         ]
 
     def setupSource(r):
-        r.addMercurialSnapshot()
+        r.addGitSnapshot()
         r.Remove('jbutler', recursive=True)

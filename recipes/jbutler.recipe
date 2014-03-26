@@ -28,6 +28,5 @@ class JButlerRecipe(PackageRecipe):
         ]
 
     def setup(r):
-        r.addMercurialSnapshot(
-            'http://scc.unx.sas.com/infra/%(name)s/trunk/%(name)s')
+        r.addGitSnapshot('http://scc.unx.sas.com/git/jbutler.git')
         r.PythonSetup()
