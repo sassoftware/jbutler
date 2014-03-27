@@ -18,7 +18,7 @@
 import re
 
 
-VERSION = "0.1.0"  # jbutler version
+VERSION = "1.0.0"  # jbutler version
 
 VIEW_SEP = '/'  # character used to separate view path elements
 
