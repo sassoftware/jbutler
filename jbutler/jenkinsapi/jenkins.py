@@ -4,7 +4,7 @@
 
 
 from jenkinsapi.jenkins import Jenkins as _Jenkins
-from jenkinsapi.exceptions import UnknownJob, JenkinsAPIException
+from jenkinsapi.custom_exceptions import UnknownJob, JenkinsAPIException
 
 from .view import View
 from .views import Views
