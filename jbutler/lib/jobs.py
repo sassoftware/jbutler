@@ -36,7 +36,7 @@ def createJobs(cfg, jobList):
             continue
 
         with open(jobFile) as fh:
-            j = server.create_job(jobname=jobName, config=fh.read())
+            j = server.create_job(jobname=jobName, config_=fh.read())
         created_jobs.append(j)
     return created_jobs
 
