@@ -135,7 +135,7 @@ class JobsCreateCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # verify JenkinsAPI asked to create job
         self.Jenkins.return_value.create_job.assert_called_once_with(
-            config=FOO_JOB, jobname='foo')
+            'foo', FOO_JOB)
 
     def test_successful_job_creation_with_list(self):
         self.mkdirs('jobs')
@@ -155,7 +155,7 @@ class JobsCreateCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # verify JenkinsAPI asked to create job
         self.Jenkins.return_value.create_job.assert_called_once_with(
-            config=FOO_JOB, jobname='foo')
+            "foo", FOO_JOB)
 
     def test_successful_job_creation_with_list_missing_item(self):
         self.mkdirs('jobs')
@@ -177,7 +177,7 @@ class JobsCreateCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # verify JenkinsAPI asked to create job
         self.Jenkins.return_value.create_job.assert_called_once_with(
-            config=FOO_JOB, jobname='foo')
+            'foo', FOO_JOB)
 
 
 class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
