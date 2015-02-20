@@ -12,6 +12,7 @@ Example::
 """
 
 import errno
+import logging
 import sys
 
 from conary.lib import log
@@ -69,6 +70,7 @@ def _main(argv, MainClass):
         argv = list(argv)
         debugAll = '--debug-all' in argv
         if debugAll:
+            log.setupLogging(consoleLevel=logging.DEBUG)
             argv.remove('--debug-all')
         else:
             debuggerException = errors.JButlerInternalError
