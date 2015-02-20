@@ -46,6 +46,22 @@ class JobSubCommand(command.BaseCommand):
             args, expected='file', appendExtra=True)
 
 
+class JobBuildCommand(JobSubCommand):
+    help = "Build a jenkins job"
+    command = ["build", "run"]
+    docs = {"no-watch": "Don't watch jobs as they run",
+            }
+
+    def addLocalParameters(self, argDef):
+        argDef['no-watch'] = options.NO_PARAM
+
+    def runCommand(self, cfg, argSet, args, **kwargs):
+        JobSubCommand.runCommand(self, cfg, argSet, args, **kwargs)
+        watch = not argSet.pop("no-watch", False)
+        jobs.buildJobs(cfg, self.jobList, watch)
+JobCommand.registerSubCommand("build", JobBuildCommand)
+
+
 class JobCreateCommand(JobSubCommand):
     help = 'Create a jenkins job'
     command = ['create']

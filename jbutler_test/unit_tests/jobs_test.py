@@ -3,6 +3,7 @@
 #
 
 
+from threading import Thread
 import os
 import sys
 
@@ -259,3 +260,38 @@ class UpdateJobsTests(jbutlerhelp.JButlerHelper):
             self.sys.stdout.write.call_args_list,
             [],
             )
+
+
+class BuildJobsTests(jbutlerhelp.JButlerHelper):
+    def setUp(self):
+        jbutlerhelp.JButlerHelper.setUp(self)
+
+        self.cfg = butlercfg.ButlerConfiguration()
+        self.cfg.server = 'http://example.com'
+
+        self.Jenkins_patcher = mock.patch(
+            'jbutler.utils.jenkins_utils.Jenkins')
+        self.Jenkins = self.Jenkins_patcher.start()
+        self.Jenkins.return_value = mock.MagicMock(spec=jenkins.Jenkins)
+
+        self.sys_patcher = mock.patch('jbutler.lib.jobs.sys')
+        self.sys = self.sys_patcher.start()
+        self.sys.stdout = mock.MagicMock(spec=sys.stdout)
+
+        self.threading_patcher = mock.patch('jbutler.lib.jobs.threading')
+        self.threading = self.threading_patcher.start()
+        self.threading.Thread = mock.MagicMock(spec=Thread)
+
+    def tearDown(self):
+        jbutlerhelp.JButlerHelper.tearDown(self)
+
+        self.Jenkins_patcher.stop()
+        self.sys_patcher.stop()
+        self.threading_patcher.stop()
+
+    def test_build_missing_job(self):
+        self.Jenkins.return_value.has_job.return_value = False
+        self.threading.active_count.return_value = 0
+
+        jobs.buildJobs(self.cfg, ["foo"])
+        self.assertEqual(self.threading.Thread.call_args_list, [])
