@@ -230,19 +230,19 @@ def _get_job_generator(server, jobList=None):
     """
     Create a generator to fetch jobs from a jenkins server
     """
-    def _job_generator():
-        for jobName in jobList:
-            if not server.has_job(jobName):
-                sys.stdout.write(
-                    "warning: server does not have job '%s'\n" % jobName)
-                continue
-            yield None, jobName
-
+    jobs = server.get_jobs_info()
     if not jobList:
-        return server.get_jobs_info()
-    else:
-        return _job_generator()
-
+        return jobs
+    jobsDict = dict((name, url) for (url, name) in jobs)
+    ret = []
+    for jobName in jobList:
+        jobUrl = jobsDict.get(jobName)
+        if jobUrl is None:
+            sys.stdout.write(
+                "warning: server does not have job '%s'\n" % jobName)
+            continue
+        ret.append((jobUrl, jobName))
+    return ret
 
 def _watch_job(job, delay=5):
     waited = 0

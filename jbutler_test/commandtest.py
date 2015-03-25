@@ -201,20 +201,16 @@ class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
     def test_successful_job_retrieval(self):
         self.mkdirs('jobs')
 
-        # create a mocked job object
-        mockJob = mock.MagicMock(spec=Job)
-        mockJob.name = 'foo'
-        mockJob.get_config.return_value = FOO_JOB
+        self.Jenkins.return_value.get_job_config.return_value = FOO_JOB
 
         # mock out Jenkins object
         self.Jenkins.return_value.get_jobs_info.return_value = iter(
             [('url', 'foo')])
-        self.Jenkins.return_value.get_job.return_value = mockJob
 
         out = self.runCommand('jobs retrieve', exitCode=0)
 
         # verify jbutler asks JenkinsAPI for jobs
-        self.Jenkins.return_value.get_job.assert_called_once_with('foo')
+        self.Jenkins.return_value.get_job_config.assert_called_once_with('url')
 
         self.assertEqual(out, '')
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
@@ -223,21 +219,12 @@ class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
     def test_successful_job_retrieval_with_list(self):
         self.mkdirs('jobs')
 
-        # create a mocked job object
-        mockJob = mock.MagicMock(spec=Job)
-        mockJob.name = 'foo'
-        mockJob.get_config.return_value = FOO_JOB
-
-        # mock out Jenkins object
-        self.Jenkins.return_value.has_job.return_value = True
-        self.Jenkins.return_value.get_job.return_value = mockJob
+        self.Jenkins.return_value.get_jobs_info.return_value = [
+                ('foourl', 'foo') ]
+        self.Jenkins.return_value.get_job_config.return_value = FOO_JOB
 
         out = self.runCommand('jobs retrieve foo', exitCode=0)
         self.assertEqual(out, '')
-
-        # verify jbutler asks JenkinsAPI for job foo
-        self.Jenkins.return_value.has_job.assert_called_once_with('foo')
-        self.Jenkins.return_value.get_job.assert_called_once_with('foo')
 
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
@@ -252,14 +239,16 @@ class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
 
         # mock out Jenkins object
         self.Jenkins.return_value.has_job.side_effect = [True, False]
-        self.Jenkins.return_value.get_job.return_value = mockJob
+        self.Jenkins.return_value.get_jobs_info.return_value = [
+                ('foourl', 'foo') ]
+        self.Jenkins.return_value.get_job_config.return_value = FOO_JOB
 
         out = self.runCommand('jobs retrieve foo bar', exitCode=0)
         self.assertEqual(out, "warning: server does not have job 'bar'\n")
 
         # verify jbutler asks JenkinsAPI for both jobs
         self.Jenkins.return_value.has_job.call_list = ['foo', 'bar']
-        self.Jenkins.return_value.get_job.assert_called_once_with('foo')
+        self.Jenkins.return_value.get_job_config.assert_called_once_with('foourl')
 
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
@@ -268,26 +257,16 @@ class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
     def test_retrieval_filter_simple(self):
         self.mkdirs('jobs')
 
-        # create a mocked job object for foo
-        mockFooJob = mock.MagicMock(spec=Job)
-        mockFooJob.name = 'foo'
-        mockFooJob.get_config.return_value = FOO_JOB
-
-        # create a mocked job object for bar
-        mockBarJob = mock.MagicMock(spec=Job)
-        mockBarJob.name = 'bar'
-        mockBarJob.get_config.return_value = BAR_JOB
-
         # mock out Jenkins object
         self.Jenkins.return_value.get_jobs_info.return_value = \
             iter([('foourl', 'foo'), ('barurl', 'bar')])
-        self.Jenkins.return_value.get_job.side_effect = [
-            mockFooJob, mockBarJob]
+        self.Jenkins.return_value.get_job_config.side_effect = [
+            FOO_JOB, BAR_JOB ]
 
         out = self.runCommand('jobs retrieve --filter=foo', exitCode=0)
 
         # verify jbutler asks JenkinsAPI for jobs
-        self.Jenkins.return_value.get_job.assert_called_once_with('foo')
+        self.Jenkins.return_value.get_job_config.assert_called_once_with('foourl')
         self.assertEqual(out, '')
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
@@ -296,27 +275,18 @@ class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
     def test_retrieval_filter_glob(self):
         self.mkdirs('jobs')
 
-        # create a mocked job object
-        mockJobFoo = mock.MagicMock(spec=Job)
-        mockJobFoo.name = 'foo'
-        mockJobFoo.get_config.return_value = FOO_JOB
-
-        mockJobBar = mock.MagicMock(spec=Job)
-        mockJobBar.name = 'bar'
-        mockJobBar.get_config.return_value = "A bar job\n"
-
         # mock out Jenkins object
         self.Jenkins.return_value.get_jobs_info.return_value = iter([
             ('foourl', 'foo'),
             ('barurl', 'bar'),
             ])
-        self.Jenkins.return_value.get_job.side_effect = [mockJobFoo]
+        self.Jenkins.return_value.get_job_config.return_value = FOO_JOB
 
         out = self.runCommand('jobs retrieve --filter=f.*', exitCode=0)
         self.assertEqual(out, '')
 
         # verify jbutler asked JenkinsAPI for jobs
-        self.Jenkins.return_value.get_job.assert_called_once_with('foo')
+        self.Jenkins.return_value.get_job_config.assert_called_once_with('foourl')
 
         self.assertTrue(os.path.exists(self.workDir + '/jobs/foo.xml'))
         self.assertEqual(open(self.workDir + '/jobs/foo.xml').read(), FOO_JOB)
@@ -324,33 +294,18 @@ class JobsRetrieveCommandTest(jbutlerhelp.JButlerCommandTest):
     def test_retrieval_filter_glob2(self):
         self.mkdirs('jobs')
 
-        # create a mocked job object for foo
-        mockFooJob = mock.MagicMock(spec=Job)
-        mockFooJob.name = 'foo'
-        mockFooJob.get_config.return_value = FOO_JOB
-
-        # create a mocked job object for bar
-        mockBarJob = mock.MagicMock(spec=Job)
-        mockBarJob.name = 'bar'
-        mockBarJob.get_config.return_value = BAR_JOB
-
-        # create a mocked job object for baz
-        mockBazJob = mock.MagicMock(spec=Job)
-        mockBazJob.name = 'baz'
-        mockBazJob.get_config.return_value = BAZ_JOB
-
         # mock out Jenkins object
         self.Jenkins.return_value.get_jobs_info.return_value = \
             iter([('foourl', 'foo'), ('barurl', 'bar'), ('bazurl', 'baz')])
-        self.Jenkins.return_value.get_job.side_effect = [
-            mockBarJob, mockBazJob]
+
+        self.Jenkins.return_value.get_job_config.side_effect = [BAR_JOB, BAZ_JOB]
 
         out = self.runCommand('jobs retrieve --filter=\'ba*\'', exitCode=0)
 
         # verify jbutler asks JenkinsAPI for jobs
         self.assertEqual(
-            self.Jenkins.return_value.get_job.call_args_list,
-            [mock.call('bar'), mock.call('baz')])
+            self.Jenkins.return_value.get_job_config.call_args_list,
+            [mock.call('barurl'), mock.call('bazurl')])
 
         self.assertEqual(out, '')
         self.assertFalse(os.path.exists(self.workDir + '/jobs/foo.xml'))
