@@ -56,3 +56,9 @@ class Jenkins(_Jenkins):
     @property
     def views(self):
         return Views(self)
+
+    def get_jobs_info(self):
+        jobs = self.poll(tree='jobs[name,url,color]')['jobs']
+        for info in jobs:
+            yield info["url"], info["name"]
+
