@@ -70,15 +70,14 @@ def retrieveJobs(cfg, jobList, jobDir, jobFilter=None):
     jobFilter = re.compile(jobFilter)
 
     retrieved_jobs = []
-    for _, jobName in _get_job_generator(server, jobList):
+    for jobUrl, jobName in _get_job_generator(server, jobList):
         if jobFilter.match(jobName):
-            jobObj = server.get_job(jobName)
-            jobXmlObj = lxml_utils.fromstring(jobObj.get_config())
+            jobXmlObj = lxml_utils.fromstring(server.get_job_config(jobUrl))
 
             jobFile = os.path.join(jobDir, jobName + '.xml')
             with open(jobFile, 'w') as fh:
                 fh.write(lxml_utils.tostring(jobXmlObj))
-            retrieved_jobs.append(jobObj)
+            retrieved_jobs.append((jobUrl, jobName))
     return retrieved_jobs
 
 

@@ -62,3 +62,6 @@ class Jenkins(_Jenkins):
         for info in jobs:
             yield info["url"], info["name"]
 
+    def get_job_config(self, url):
+        response = self.requester.get_and_confirm_status(url + '/config.xml')
+        return response.text
