@@ -121,7 +121,7 @@ JobCommand.registerSubCommand('disable', JobDisableCommand)
 
 
 class JobEnableCommand(JobSubCommand):
-    help = 'Disable a jenkins job'
+    help = 'Enable a jenkins job'
     commands = ['enable', 'on']
 
     def addLocalParameters(self, argDef):
