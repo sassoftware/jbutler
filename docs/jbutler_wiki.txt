@@ -195,8 +195,6 @@ To retrieve information about the existing views on a Jenkins server, run the fo
 
 <code>jenkins views retrieve</code>
 
-{{Note | Before running this command, make sure that you have an empty file called views.yml in your project directory.}}
-
 This command updates the views.yml file with information about the existing views on the Jenkins server.
 
 == Create View ==
