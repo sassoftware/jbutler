@@ -36,13 +36,6 @@ class ViewSubCommand(command.BaseCommand):
         self.projectDir = os.path.abspath(self.projectDir)
         self.viewConfig = os.path.join(self.projectDir, 'views.yml')
 
-        # verify viewsDir exists
-        if not (os.path.exists(self.viewConfig)
-                and os.path.isfile(self.viewConfig)):
-            raise errors.CommandError(
-                'no views configuration found at %s' % (self.projectDir)
-                )
-
 
 class ViewCreateCommand(ViewSubCommand):
     help = 'Create a jenkins view from config file'
