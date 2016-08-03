@@ -1,0 +1,6 @@
+PyYAML
+click~=5.0
+jenkinsapi==0.2.27
+lxml
+requests
+six

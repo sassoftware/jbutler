@@ -1,8 +1,22 @@
 #
 # Copyright (c) SAS Institute Inc.
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import logging
 import urllib
 
@@ -23,19 +37,15 @@ log = logging.getLogger(__name__)
 
 
 class Views(_Views):
-    '''
-    Wrapper around jenkinsapi Views object
-    '''
+    """Wrapper around jenkinsapi Views object"""
+
     def __contains__(self, view_path):
         return (self.get_view_by_path(view_path) is not None)
 
     def __getitem__(self, view_name):
         for row in self.jenkins._data.get('views', []):
             if row['name'] == view_name:
-                return View(
-                    row['url'],
-                    row['name'],
-                    self.jenkins)
+                return View(row['url'], row['name'], self.jenkins)
         else:
             return None
 
@@ -46,12 +56,10 @@ class Views(_Views):
         return yaml.safe_dump(view_objs, **YAML_KWARGS)
 
     def _createView(self, view_obj, parent_view, view_list=None, force=False):
-        """
-        Create a view and all sub-views from a viewObj
-        """
+        """Create a view and all sub-views from a viewObj"""
         if parent_view is None:
             raise Exception(
-                "trying to create child view of non-existant parent: '%s'" %
+                u"trying to create child view of non-existant parent: '%s'" %
                 view_obj['path'])
 
         if not view_list or view_obj['path'] in view_list:
@@ -90,23 +98,23 @@ class Views(_Views):
         if 'includeRegex' in viewConfig:
             json_data['useincluderegex'] = {
                 'includeRegex': viewConfig['includeRegex'],
-                }
+            }
         json_data['columns'] = [
-            {"stapler-class": "hudson.views.StatusColumn",
-                "kind": "hudson.views.StatusColumn"},
-            {"stapler-class": "hudson.views.WeatherColumn",
-                "kind": "hudson.views.WeatherColumn"},
-            {"stapler-class": "hudson.views.JobColumn",
-                "kind": "hudson.views.JobColumn"},
-            {"stapler-class": "hudson.views.LastSuccessColumn",
-                "kind": "hudson.views.LastSuccessColumn"},
-            {"stapler-class": "hudson.views.LastFailureColumn",
-                "kind": "hudson.views.LastFailureColumn"},
-            {"stapler-class": "hudson.views.LastDurationColumn",
-                "kind": "hudson.views.LastDurationColumn"},
-            {"stapler-class": "hudson.views.BuildButtonColumn",
-                "kind": "hudson.views.BuildButtonColumn"},
-            ]
+            {'stapler-class': 'hudson.views.StatusColumn',
+             'kind': 'hudson.views.StatusColumn'},
+            {'stapler-class': 'hudson.views.WeatherColumn',
+             'kind': 'hudson.views.WeatherColumn'},
+            {'stapler-class': 'hudson.views.JobColumn',
+             'kind': 'hudson.views.JobColumn'},
+            {'stapler-class': 'hudson.views.LastSuccessColumn',
+             'kind': 'hudson.views.LastSuccessColumn'},
+            {'stapler-class': 'hudson.views.LastFailureColumn',
+             'kind': 'hudson.views.LastFailureColumn'},
+            {'stapler-class': 'hudson.views.LastDurationColumn',
+             'kind': 'hudson.views.LastDurationColumn'},
+            {'stapler-class': 'hudson.views.BuildButtonColumn',
+             'kind': 'hudson.views.BuildButtonColumn'},
+        ]
 
         for jobName in viewConfig.get('jobs', []):
             json_data[jobName] = True
@@ -147,7 +155,7 @@ class Views(_Views):
         self.delete_view_by_url(view.baseurl)
 
     def delete_view_by_url(self, str_url):
-        url = "%s/doDelete" % str_url
+        url = '%s/doDelete' % str_url
         self.jenkins.requester.post_and_confirm_status(url, data='')
         self.jenkins.poll()
         return self

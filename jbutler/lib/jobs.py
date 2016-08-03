@@ -1,70 +1,69 @@
 #
 # Copyright (c) SAS Institute Inc.
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 """
 Library for working with jenkins jobs
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import logging
 import os
 import re
-import sys
 import time
 import threading
 
 from jenkinsapi.custom_exceptions import NotBuiltYet
 from jenkinsapi.queue import QueueItem
 from requests import HTTPError
-
-from .. import errors
-from ..utils import (
-    lxml_utils,
-    jenkins_utils,
-    )
-
+import click
 
 log = logging.getLogger(__name__)
 
 
-def createJobs(cfg, jobList):
-    """
-    Create jenkins jobs using the files listed in jobList
+def createJobs(server, jobList):
+    """Create jenkins jobs using the files listed in jobList
 
-    :param cfg: A config object
-    :type cfg: ButlerConfig
-    :param jobList: list of jenkins jobs to create
-    :type cfg: list
-    :param projectPath: path to directory containing jenkins job config files
+    :param server: A jenkins server
+    :type server: :class:`jenkinsapi.jenkins.Jenkins`
+    :param jobList: list of file-like objects
+    :type jobList: list
     """
-    server = jenkins_utils.server_factory(cfg)
-
     created_jobs = []
     for jobFile in jobList:
-        jobName, _ = os.path.splitext(jobFile)
-        jobName = os.path.basename(jobName)
+        jobName, _ = os.path.splitext(os.path.basename(jobFile.name))
 
-        if server.has_job(jobName):
-            continue
-
-        with open(jobFile) as fh:
-            j = server.create_job(jobName, fh.read())
-        created_jobs.append(j)
+        if not server.has_job(jobName):
+            j = server.create_job(jobName, jobFile.read())
+            created_jobs.append(j)
+        else:
+            click.echo(u"warning: job already exists on server: '%s'" %
+                       jobName, err=True)
     return created_jobs
 
 
-def retrieveJobs(cfg, jobList, jobDir, jobFilter=None):
-    """
-    Retrieve jenkins config
+def retrieveJobs(server, jobList, jobFilter=None):
+    """Retrieve jenkins config
 
-    :param cfg: A config object
-    :type cfg: ButlerConfig
-    :param jobList: list of jenkins jobs to create
-    :type cfg: list
-    :param projectPath: path to directory containing jenkins job config files
+    :param server: configuration object
+    :type cfg: :class:`jenkinsapi.Jenkins`
+    :param list jobList: list of job names to retrieve
+    :param str jobFilter: regex to filter jobs with or None
+    :returns: list of :class:`jenkinsapi.Job`s
     """
-    if not os.path.exists(jobDir):
-        raise errors.CommandError("no such directory: '%s'" % jobDir)
-    server = jenkins_utils.server_factory(cfg)
-
     if jobFilter is None:
         jobFilter = '.*'
     jobFilter = re.compile(jobFilter)
@@ -72,146 +71,100 @@ def retrieveJobs(cfg, jobList, jobDir, jobFilter=None):
     retrieved_jobs = []
     for jobUrl, jobName in _get_job_generator(server, jobList):
         if jobFilter.match(jobName):
-            jobXmlObj = lxml_utils.fromstring(server.get_job_config(jobUrl))
-
-            jobFile = os.path.join(jobDir, jobName + '.xml')
-            with open(jobFile, 'w') as fh:
-                fh.write(lxml_utils.tostring(jobXmlObj))
-            retrieved_jobs.append((jobUrl, jobName))
+            retrieved_jobs.append(server.get_job(jobName))
     return retrieved_jobs
 
 
-def disableJobs(cfg, jobList, force=False):
-    server = jenkins_utils.server_factory(cfg)
+def disableJobs(server, jobList):
+    """Disable josb in `jobList`
 
+    :param server: Jenkins server
+    :type server: :class:`jenkinsapi.Jenkins`
+    :param list jobList: job configuration files
+    :returns: list of job files that were disabled
+    """
     disabled_jobs = []
     for jobFile in jobList:
         jobName, _ = os.path.splitext(os.path.basename(jobFile))
-
         if server.has_job(jobName):
             jobObj = server.get_job(jobName)
-            with open(jobFile) as fh:
-                jobXmlObj = lxml_utils.parse(fh)
-
-            disabled = jobXmlObj.xpath('/project/disabled')
-            if not disabled:
-                raise errors.CommandError(
-                    "Job config does not have a 'disabled' property")
-            disabled = disabled[0]
-
-            jobObj.disable()
-
-            if disabled.text == 'false' and force:
-                disabled.text = 'true'
-                with open(jobFile, 'w') as fh:
-                    fh.write(lxml_utils.tostring(jobXmlObj))
-            disabled_jobs.append(jobObj)
+            if jobObj.is_enabled():
+                jobObj.disable()
+                disabled_jobs.append(jobFile)
         else:
-            sys.stdout.write(
-                "warning: no such job on server: '%s'\n" % jobName)
-
+            click.echo(u"warning: no such job: '%s'" % jobName,
+                       err=True)
     return disabled_jobs
 
 
-def enableJobs(cfg, jobList, force=False):
-    server = jenkins_utils.server_factory(cfg)
+def enableJobs(server, jobList):
+    """Enable josb in `jobList`
 
+    :param server: Jenkins server
+    :type server: :class:`jenkinsapi.Jenkins`
+    :param list jobList: job configuration files
+    :returns: list of job files that were enabled
+    """
     enabled_jobs = []
     for jobFile in jobList:
         jobName, _ = os.path.splitext(os.path.basename(jobFile))
-
         if server.has_job(jobName):
             jobObj = server.get_job(jobName)
-            with open(jobFile) as fh:
-                jobXmlObj = lxml_utils.parse(fh)
-
-            disabled = jobXmlObj.xpath('/project/disabled')
-            if not disabled:
-                raise errors.CommandError(
-                    "Job config does not have a 'disabled' property")
-            disabled = disabled[0]
-
-            if disabled.text == 'true' and force:
-                disabled.text = 'false'
-                with open(jobFile, 'w') as fh:
-                    fh.write(lxml_utils.tostring(jobXmlObj))
-
-            if disabled.text == 'false' and not jobObj.is_enabled():
+            if not jobObj.is_enabled():
                 jobObj.enable()
-                enabled_jobs.append(jobObj)
+                enabled_jobs.append(jobFile)
         else:
-            sys.stdout.write(
-                "warning: no such job on server: '%s'\n" % jobName)
+            click.echo(u"warning: no such job: '%s'" % jobName,
+                       err=True)
     return enabled_jobs
 
 
-def deleteJobs(cfg, jobList, force=False):
-    '''
-    Delete the jobs in jobList. If force is True, also delete the local
-    config file
+def deleteJobs(server, jobList):
+    """Delete the jobs in `jobList`.
 
-    :param cfg: configuration
-    :type cfg: JButlerCfg
-    :param jobList: list of job config files
-    :type jobList: list
-    :param force: if true, delete the local config files
-    :type: bool
-    '''
-    server = jenkins_utils.server_factory(cfg)
-
+    :param server: jenkins server
+    :type server: :class:`jenkinsapi.jenkins.Jenkins`
+    :param list jobList: list of job config file names
+    """
     deleted_jobs = []
-    for jobFile in jobList:
-        if not os.path.exists(jobFile):
-            raise errors.CommandError(
-                "[Errno 2]: No such file or directory: '%s'" % jobFile)
-
-        jobName, _ = os.path.splitext(os.path.basename(jobFile))
-        if server.has_job(jobName):
-            server.delete_job(jobName)
-            deleted_jobs.append(jobFile)
-            if force:
-                os.remove(jobFile)
+    for job_file in jobList:
+        job_name, _ = os.path.splitext(os.path.basename(job_file))
+        if server.has_job(job_name):
+            server.delete_job(job_name)
+            deleted_jobs.append(job_name)
         else:
-            sys.stdout.write(
-                "warning: job does not exist on server: '%s'\n" % jobName)
+            click.echo(u"warning: no such job: '%s'" % job_name,
+                       err=True)
     return deleted_jobs
 
 
-def updateJobs(cfg, jobList):
-    '''
-    Update an existing jenkins job to match the local config
+def updateJobs(server, jobList):
+    """Update an existing jenkins job to match the local config
 
-    :param cfg: A config object
-    :type cfg: ButlerConfig
-    :param jobList: list of jenkins jobs to update
-    :type jobList: list
-    '''
-    server = jenkins_utils.server_factory(cfg)
-
+    :param server: A jenkins server
+    :type server: :class:`jenkinsapi.jenkins.Jenkins`
+    :param list jobList: list of job config files
+    """
     updated_jobs = []
     for jobFile in jobList:
-        jobName, _ = os.path.splitext(os.path.basename(jobFile))
+        jobName, _ = os.path.splitext(os.path.basename(jobFile.name))
 
         if server.has_job(jobName):
-            with open(jobFile) as fh:
-                job = server.update_job(jobname=jobName, config=fh.read())
+            job = server.get_job(jobName)
+            job.update_config(jobFile.read())
             updated_jobs.append(job)
         else:
-            sys.stdout.write(
-                "warning: job does not exist on server: '%s'\n" % jobName)
+            click.echo(u"warning: no such job: '%s'" % jobName,
+                       err=True)
     return updated_jobs
 
 
-def buildJobs(cfg, jobList, watch=True, params=None):
-    """
-    Trigger a job to build
+def buildJobs(server, jobList, watch=True, params=None):
+    """Trigger a job to build
 
     :param jbutler.ButlerConfig cfg: configuration
     :param list jobList: list of jenkins job names
     """
-    server = jenkins_utils.server_factory(cfg)
-
-    running = []
     for jobFile in jobList:
         jobName, _ = os.path.splitext(os.path.basename(jobFile))
 
@@ -227,22 +180,21 @@ def buildJobs(cfg, jobList, watch=True, params=None):
 
 
 def _get_job_generator(server, jobList=None):
-    """
-    Create a generator to fetch jobs from a jenkins server
-    """
+    """Create a generator to fetch jobs from a jenkins server"""
     jobs = server.get_jobs_info()
     if not jobList:
         return jobs
-    jobsDict = dict((name, url) for (url, name) in jobs)
+    jobsDict = dict((name, url) for url, name in jobs)
     ret = []
     for jobName in jobList:
         jobUrl = jobsDict.get(jobName)
         if jobUrl is None:
-            sys.stdout.write(
-                "warning: server does not have job '%s'\n" % jobName)
-            continue
-        ret.append((jobUrl, jobName))
+            click.echo(u"warning: no such job: '%s'" % jobName,
+                       err=True)
+        else:
+            ret.append((jobUrl, jobName))
     return ret
+
 
 def _watch_job(job, delay=5):
     waited = 0
@@ -253,15 +205,16 @@ def _watch_job(job, delay=5):
             try:
                 job = job.get_build()
             except (NotBuiltYet, HTTPError):
-                sys.stdout.write(
-                    "[%s] Waited %is for start\n" % (job.name, waited))
+                click.echo('[%s] Waited %is for start' % (job.name, waited))
                 waited += delay
                 time.sleep(delay)
         else:
             console = job.get_console().split('\n')
             output = console[idx:]
             if output:
-                sys.stdout.writelines("[%s] %s\n" % (job.name, o) for o in output if o)
+                for line in output:
+                    if line:
+                        click.echo('[%s] %s\n' % (job.name, line))
             idx = len(console) - 1
             if not job.is_running():
                 return

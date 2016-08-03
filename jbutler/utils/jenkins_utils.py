@@ -15,21 +15,24 @@
 #
 
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import getpass
+
 from ..jenkinsapi.jenkins import Jenkins
 from ..jenkinsapi.requester import Requester
 
 
 def server_factory(cfg):
-    """
-    Generate a jenkins server object
+    """Generate a jenkins server object
 
-    @param cfg: a config object
-    @type cfg: ButlerConfig
+    :param cfg: a config object
+    :type cfg: ButlerConfig
     """
-    server = Jenkins(
-        cfg.server,
-        cfg.username,
-        cfg.password,
-        requester=Requester(cfg.username, cfg.password, cfg.ssl_verify),
-        )
+    if cfg.username and not cfg.password:
+        cfg.password = getpass.getpass()
+    requester = Requester(cfg.username, cfg.password, cfg.ssl_verify)
+    server = Jenkins(cfg.server, cfg.username, cfg.password,
+                     requester=requester)
     return server

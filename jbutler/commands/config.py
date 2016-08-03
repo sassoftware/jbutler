@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) SAS Institute Inc.
 #
@@ -15,28 +14,19 @@
 # limitations under the License.
 #
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import copy
 
-import sys
-
-from testrunner import suite, testhandler
-
-
-class Suite(suite.TestSuite):
-    testsuite_module = sys.modules[__name__]
-    suiteClass = testhandler.ConaryTestSuite
-    topLevelStrip = 0
-
-    def getCoverageDirs(self, *_):
-        import jbutler
-        return [jbutler]
-
-    def sortTests(self, tests):
-        return self.sortTestsByType(tests)
+import click
 
 
-_s = Suite()
-setup = _s.setup
-main = _s.main
-
-if __name__ == '__main__':
-    _s.run()
+@click.command()
+@click.option('--show-password/--no-show-password', default=False)
+@click.pass_obj
+def config(cfg, show_password):
+    config = copy.copy(cfg)
+    if not show_password and config.password:
+        config.set('password', '<obscured>')
+    config.write(click.get_text_stream('stdout'))

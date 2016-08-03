@@ -1,7 +1,22 @@
 #
 # Copyright (c) SAS Institute Inc.
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from jenkinsapi.view import View as _View
 
@@ -10,9 +25,9 @@ from ..utils import lxml_utils
 
 
 class View(_View):
-    '''
+    """
     Wrapper around jenkinsapi View object
-    '''
+    """
     def __init__(self, url, name, jenkins_obj):
         _View.__init__(self, url, name, jenkins_obj)
         self._get_form_content()
@@ -70,7 +85,7 @@ class View(_View):
             filterQueue=self.filterQueue,
             filterExecutors=self.filterExecutors,
             path=path,
-            )
+        )
 
         if hasattr(self, 'defaultView'):
             data['defaultView'] = self.defaultView
@@ -80,5 +95,5 @@ class View(_View):
                 statusFilter=self.statusFilter,
                 recurse=self.recurse,
                 includeRegex=self.includeRegex,
-                )
+            )
         return data

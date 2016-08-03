@@ -18,8 +18,22 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from jenkinsapi.utils.requester import Requester as _Requester
+from jbutler.lib import cfg
+
+from ..import base
 
 
-class Requester(_Requester):
-    pass
+class CfgTestCase(base.JbutlerTestCase):
+    """Test the cfg module of jbutler"""
+    def test_defaults(self):
+        config = cfg.JbutlerConfigParser()
+        self.assertEqual('jobs', config.jobdir)
+        self.assertEqual('templates', config.templatedir)
+        self.assertTrue(config.ssl_verify)
+
+    def test_no_server(self):
+        self.mkfile('noserver', contents='\n')
+        config = cfg.JbutlerConfigParser()
+        with self.assertRaises(cfg.MissingRequiredOptionError) as cm:
+            config.read(['noserver'])
+            self.assertIn("'server'", str(cm.exception))

@@ -14,4 +14,26 @@
 # limitations under the License.
 #
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
+import requests
+import sys
+
+from .commands.base import jbutler
+from .lib.cfg import MissingRequiredOptionError
+
+requests.packages.urllib3.disable_warnings()
+
+
+def main():
+    try:
+        jbutler()
+    except MissingRequiredOptionError as e:
+        sys.stderr.write('Error: Could not find a valid config file: %s\n'
+                         % str(e))
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
