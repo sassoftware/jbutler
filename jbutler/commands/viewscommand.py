@@ -63,7 +63,6 @@ class ViewCreateCommand(ViewSubCommand):
         server = jenkins_utils.server_factory(cfg)
         with open(self.viewConfig) as fh:
             server.views.deserialize(fh.read(), self.viewList)
-ViewCommand.registerSubCommand('create', ViewCreateCommand)
 
 
 class ViewDeleteCommand(ViewSubCommand):
@@ -104,7 +103,6 @@ class ViewDeleteCommand(ViewSubCommand):
         if force and created_views:
             with open(self.viewConfig, 'w') as fh:
                 fh.write(created_views.serialize())
-ViewCommand.registerSubCommand('delete', ViewDeleteCommand)
 
 
 class ViewRetrieveComand(ViewSubCommand):
@@ -118,7 +116,6 @@ class ViewRetrieveComand(ViewSubCommand):
         retrieved_views = server.views.serialize(self.viewList)
         with open(self.viewConfig, 'w') as fh:
             fh.write(retrieved_views)
-ViewCommand.registerSubCommand('retrieve', ViewRetrieveComand)
 
 
 class ViewUpdateCommand(ViewSubCommand):
@@ -130,4 +127,9 @@ class ViewUpdateCommand(ViewSubCommand):
         server = jenkins_utils.server_factory(cfg)
         with open(self.viewConfig) as fh:
             server.views.deserialize(fh.read(), self.viewList, update=True)
+
+
+ViewCommand.registerSubCommand('create', ViewCreateCommand)
+ViewCommand.registerSubCommand('delete', ViewDeleteCommand)
+ViewCommand.registerSubCommand('retrieve', ViewRetrieveComand)
 ViewCommand.registerSubCommand('update', ViewUpdateCommand)

@@ -50,6 +50,7 @@ def jbutler(ctx, config, config_file, skip_default_config, quiet, verbose):
 
     ctx.obj = cfg.get_config(config_files, **dict(config))
 
+
 jbutler.add_command(branch)
 jbutler.add_command(config)
 jbutler.add_command(jobs)
